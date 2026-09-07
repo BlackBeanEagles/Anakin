@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Scoreboard — which departments answer{% endblock %}
+{% block body %}
+
+<section class="hero">
+  {% include "_art.html" %}
+  <div class="eyebrow">Public dataset</div>
+  <h1>Which departments actually answer.</h1>
+  <p>
+    Every reply we receive gets assessed: did it deliver the remedy, or was it a procedural
+    non-answer? This page is the running tally. It gets more useful with every case,
+    and we publish it whether or not it flatters anyone.
+  </p>
+
+  <div class="stats">
+    <div class="stat"><div class="n">{{ board.total_cases }}</div><div class="k">Cases routed</div></div>
+    <div class="stat"><div class="n">{{ board.total_replies }}</div><div class="k">Replies assessed</div></div>
+    <div class="stat bad"><div class="n">{{ board.total_deflections }}</div><div class="k">Non-answers</div></div>
+    <div class="stat bad">
+      <div class="n">{% if board.overall_deflection_rate is not none %}{{ board.overall_deflection_rate }}%{% else %}—{% endif %}</div>
+      <div class="k">Deflection rate</div>
+    </div>
+  </div>
+</section>
+
+{% if board.total_replies < 10 %}
+<div class="banner info">
+  <strong>Early data.</strong> With {{ board.total_replies }} assessed
+  repl{{ 'y' if board.total_replies == 1 else 'ies' }}, per-department rates are noise.
+  Counts are shown; percentages are suppressed until a department has at least
+  {{ min_replies }} replies. We'd rather show you the <em>n</em> than a confident-looking
+  number built on three data points.
+</div>
+{% endif %}
+
+<h2>By department</h2>
+
+{% if not board.ministries %}
+  <div class="empty">
+    No routed cases yet. The scoreboard fills in as cases are filed and replies come back.
+  </div>
+{% else %}
+<div class="card" style="padding:0;overflow:hidden">
+  {% for m in board.ministries %}
+  <div style="padding:17px 22px;{% if not loop.last %}border-bottom:1px solid var(--edge-soft);{% endif %}">
+    <div style="display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-bottom:9px">
+      <strong style="font-size:15px">{{ m.ministry_name }}</strong>
+      <span class="pill rung">n={{ m.cases }}</span>
+      <span style="margin-left:auto;font-size:12.5px;color:var(--ink-3)">
+        {{ m.filed }} filed ·
+        {% if m.resolve_rate is not none and m.filed >= min_replies %}
+          <strong style="color:var(--good-ink)">{{ m.resolve_rate }}% resolved</strong>
+        {% else %}
+          {{ m.resolved }} resolved
+        {% endif %}
+        · deepest rung {{ m.max_rung }}
+        {# suppressed under time compression, where every reply lands in the same second #}
+        {% if m.median_response_days %}
+          · <span style="font-family:var(--mono)">{{ m.median_response_days }}d</span> median reply
+        {% endif %}
+      </span>
+    </div>
+
+    {# Deflection rate as a single thin bar. One series, so no legend — the label
+       beside it carries identity. Suppressed entirely below the sample floor. #}
+    {% if m.replies >= min_replies and m.deflection_rate is not none %}
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="flex:1;height:8px;background:var(--paper-2);border-radius:4px;overflow:hidden">
+          <div style="width:{{ m.deflection_rate }}%;height:100%;border-radius:4px;
+                      background:var(--bad)"></div>
+        </div>
+        <span style="font-family:var(--mono);font-size:12.5px;color:var(--bad-ink);
+                     min-width:132px;text-align:right">
+          {{ m.deflection_rate }}% non-answers
+        </span>
+      </div>
+    {% else %}
+      <div style="font-size:12.5px;color:var(--ink-4)">
+        {{ m.replies }} repl{{ 'y' if m.replies == 1 else 'ies' }} so far —
+        too few to quote a rate
+      </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+
+<div class="card tint-indigo" style="font-size:13.5px">
+  <strong>How a "non-answer" is decided.</strong> Every reply is assessed against the
+  citizen's original ask. Acknowledging receipt is not resolving. Forwarding to another
+  office is not resolving. If the person would still have the same problem tomorrow, it
+  counts as a deflection — and the case climbs a rung.
+</div>
+{% endif %}
+
+{% endblock %}
