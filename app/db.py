@@ -34,6 +34,7 @@ def connect() -> sqlite3.Connection:
 MIGRATIONS = [
     ("cases", "info_asks", "INTEGER NOT NULL DEFAULT 0"),
     ("cases", "info_questions", "TEXT"),
+    ("cases", "observed_json", "TEXT"),
     # when a reply actually landed — needed for time-to-first-response
     ("actions", "response_at", "TEXT"),
     # when the grievance was registered — the anchor for "days elapsed since filing".

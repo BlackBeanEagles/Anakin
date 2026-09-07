@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS cases (
     outcome         TEXT,
     info_asks       INTEGER NOT NULL DEFAULT 0,
     info_questions  TEXT,
+    observed_json   TEXT,
     amount_claimed  REAL NOT NULL DEFAULT 0,
     amount_recovered REAL NOT NULL DEFAULT 0,
     resolved_at     TEXT,

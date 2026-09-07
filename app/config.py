@@ -70,12 +70,23 @@ class Settings:
     # can never touch real cases.
     db_path = Path(os.getenv("PERSIST_DB") or (data_dir / "persist.db"))
     outbox = Path(os.getenv("PERSIST_OUTBOX") or (data_dir / "outbox"))
+    web_cache = Path(os.getenv("PERSIST_WEB_CACHE") or (data_dir / "webcache"))
 
     # Filing route. CPGRAMS requires a citizen-owned account, so the agent prepares the
     # packet and the citizen performs the one credentialed keystroke. We never ask for,
     # store, or use anyone's portal password.
     portal_name = "CPGRAMS"
     portal_url = "https://pgportal.gov.in"
+
+    # Public pages the watcher reads. Government sites move; keeping these here
+    # means a broken source is a config edit, not a code change.
+    cpgrams_status_url = os.getenv(
+        "CPGRAMS_STATUS_URL", "https://pgportal.gov.in/Status/Index")
+    nodal_directory_url = os.getenv(
+        "NODAL_DIRECTORY_URL", "https://pgportal.gov.in/Home/NodalPgOfficers")
+    indiapost_track_url = os.getenv(
+        "INDIAPOST_TRACK_URL", "https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx")
+    web_reading_enabled = _bool("WEB_READING", True)
 
     @property
     def mock_llm(self) -> bool:

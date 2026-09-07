@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.utils import formataddr
 
-from . import db, notify
+from . import db, notify, watch, web
 from .agent import (
     draft_appeal,
     draft_call_script,
@@ -169,8 +169,27 @@ def prepare(case: dict) -> None:
 
 
 def climb(case: dict) -> None:
-    """Waiting period elapsed with no adequate response - go one rung higher."""
+    """Waiting period elapsed - check reality, then go one rung higher if warranted."""
     cid = case["id"]
+
+    # Look before escalating. Without this the agent is just a timer, and would
+    # escalate to a Director on a grievance that was quietly resolved last week.
+    observed = watch.check_case(case)
+    if observed:
+        p = observed["primary"]
+        if p["closed"] and p["status_text"]:
+            # The portal says it is disposed of. Assess that as a real reply rather
+            # than climbing blind - it may be a genuine remedy, or a brush-off that
+            # deserves an appeal instead of a chaser.
+            db.log_event(cid, "observed",
+                         "Portal shows this as closed. Assessing the disposal "
+                         "rather than escalating on the timer.")
+            record_response(
+                cid, "[Read from " + p["source_url"] + "] " + p["status_text"])
+            return
+        if p["evidence"]:
+            # Carry the live finding into the next draft as citable evidence.
+            db.update_case(cid, observed_json=json.dumps(observed["primary"]))
     facts = db.jload(case["facts_json"], {})
     routing = db.jload(case["routing_json"], {})
     nxt = rung(case["rung"] + 1)
@@ -291,6 +310,14 @@ def _draft_for(case: dict, facts: dict, routing: dict, r: Rung) -> tuple[dict, s
         return draft_officer_email(case, facts, routing, waited), _addressee(m)
     if r.key == "appeal":
         last = _last_response(case["id"]) or "No reply was received within the stipulated period."
+        # A live observation is the strongest thing an appeal can carry: not "we think
+        # nothing happened" but "your own tracking page still says this today".
+        seen = db.jload(case.get("observed_json"), {}) or {}
+        if seen.get("evidence"):
+            last += (
+                "\n\n[Observed on "
+                + seen.get("source_url", "the department portal")
+                + ": " + seen["evidence"] + "]")
         return draft_appeal(case, facts, routing, last), _addressee(m)
     if r.key == "phone":
         # the officer's direct line beats the public helpline for a status chase
@@ -423,6 +450,9 @@ def advance(case: dict) -> None:
 def tick() -> int:
     """One pass over the work queue. Returns how many cases advanced."""
     due = db.due_cases()
+    # one budget per pass, so a bug cannot turn into a flood of requests at a
+    # government server no matter how long the queue is
+    web.reset_tick_budget()
     for case in due:
         log.info("advancing %s (%s, rung %s)", case["id"], case["status"], case["rung"])
         advance(case)
