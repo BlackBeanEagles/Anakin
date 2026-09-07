@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>{% block title %}Persist{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='13' fill='none' stroke='%23c0392b' stroke-width='3'/><circle cx='16' cy='16' r='5' fill='%232b3470'/></svg>">
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="/"><span class="seal"></span>Persist</a>
+    <span class="tagline">an agent that doesn't let go of your grievance</span>
+    <nav>
+      <a href="/">Ledger</a>
+      <a href="/scoreboard">Scoreboard</a>
+      <a href="/file">File one</a>
+      <a href="/console">Console</a>
+    </nav>
+  </div>
+</header>
+
+<main class="wrap">
+  {% if settings.mock_llm %}
+  <div class="banner err">
+    <strong>Mock mode.</strong> The model is stubbed out — routing and drafts are canned
+    keyword responses, not real reasoning. Set <code>LLM_PROVIDER=groq</code> (free key at
+    <a href="https://console.groq.com/keys">console.groq.com/keys</a>) before demoing anything.
+  </div>
+  {% elif settings.key_missing %}
+  <div class="banner err">
+    <strong>No API key.</strong> <code>LLM_PROVIDER={{ settings.provider.key }}</code> is
+    selected but <code>{{ settings.provider.api_key_env }}</code> is empty. Get a key at
+    <a href="{{ settings.provider.console_url }}">{{ settings.provider.console_url }}</a>.
+  </div>
+  {% endif %}
+  {% if settings.dry_run %}
+  <div class="banner dry">
+    <strong>Dry run.</strong> Nothing is being transmitted. Drafted correspondence is written to
+    <code>outbox/</code> instead of being sent. Set <code>DRY_RUN=false</code> in <code>.env</code>
+    when you are ready to contact real departments.
+  </div>
+  {% endif %}
+
+  {% block body %}{% endblock %}
+
+  <footer class="foot">
+    Persist files grievances on <a href="{{ settings.portal_url }}">{{ settings.portal_name }}</a>
+    with each complainant's recorded consent. Every outbound action is approved by a human first.
+    We never ask for, store, or use anyone's portal password — the citizen performs the one
+    credentialed submission themselves.
+  </footer>
+</main>
+</body>
+</html>

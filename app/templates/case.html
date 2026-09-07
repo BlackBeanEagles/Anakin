@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+{% block title %}{{ case.id }} — Persist{% endblock %}
+{% block body %}
+
+<section class="hero">
+  {% include "_art.html" %}
+  <div class="eyebrow">{{ case.id }}</div>
+  <h1 style="margin-top:4px">
+    {{ facts.one_line_summary if facts.one_line_summary else "Reading the case…" }}
+  </h1>
+  <p style="margin-bottom:14px">
+    Filed for {{ case.citizen_name }}
+    {% if case.cpgrams_reg_no %} · registration <strong style="font-family:var(--mono)">{{ case.cpgrams_reg_no }}</strong>{% endif %}
+    {% if case.amount_claimed %} · ₹{{ "{:,.0f}".format(case.amount_claimed) }} at stake{% endif %}
+  </p>
+
+  <div class="ladder">
+    {% for r in RUNGS[:6] %}
+    <div class="step {% if case.rung > r.n %}done s{{ r.n }}{% elif case.rung == r.n %}now{% endif %}">
+      <span class="n">RUNG {{ r.n }}</span>{{ r.label }}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="ladder-note">{{ rung.blurb }}</div>
+</section>
+
+{% if case.status == 'resolved' %}
+  <div class="card" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <span class="stamp good">Resolved</span>
+    <div style="flex:1;min-width:240px">
+      {{ case.outcome }}
+      {% if case.amount_recovered %}
+        <strong style="color:var(--good-ink)">₹{{ "{:,.0f}".format(case.amount_recovered) }} recovered.</strong>
+      {% endif %}
+    </div>
+  </div>
+{% elif case.status == 'closed_unresolved' %}
+  <div class="card" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <span class="stamp bad">Unresolved</span>
+    <div style="flex:1;min-width:240px">{{ case.outcome }}</div>
+  </div>
+{% elif case.status == 'awaiting_submission' %}
+  <div class="card tint-amber" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <span class="stamp wait">With citizen</span>
+    <div style="flex:1;min-width:260px">
+      The packet is ready. They submit it on {{ settings.portal_name }} with their own account,
+      then send us the registration number — <strong>the one step that legally has to be
+      theirs</strong>. After that the agent takes over completely.
+    </div>
+  </div>
+{% elif case.status == 'needs_info' %}
+  <div class="card tint-amber" style="display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+    <span class="stamp wait">Blocked</span>
+    <div style="flex:1;min-width:260px">
+      We can't file this yet — a grievance missing these details tends to get closed without
+      action. The citizen has been asked{% if case.info_asks > 1 %} twice{% endif %}.
+    </div>
+  </div>
+{% elif case.status == 'awaiting_approval' %}
+  <div class="card tint-indigo">
+    <strong>Drafted, awaiting human approval.</strong> The agent has prepared the next action
+    and queued it in the <a href="/console">console</a>. Nothing has been sent.
+  </div>
+{% endif %}
+
+{% if routing and not routing.out_of_scope %}
+<h2>Routing decision</h2>
+<div class="card">
+  <dl class="kv">
+    <dt>Authority</dt><dd>{{ routing.ministry_name }}</dd>
+    <dt>Category</dt><dd>{{ routing.category_name }}</dd>
+    <dt>Confidence</dt>
+    <dd><span class="conf {% if routing.confidence < 0.7 %}low{% endif %}">
+      {{ "%.0f"|format(routing.confidence * 100) }}%
+      {% if routing.confidence < 0.7 %} — low, a human should check this{% endif %}
+    </span></dd>
+    <dt>Why</dt><dd>{{ routing.rationale }}</dd>
+    {% if routing.applicable_rule %}<dt>Standard invoked</dt><dd>{{ routing.applicable_rule }}</dd>{% endif %}
+    {% if routing.faster_route %}
+    <dt>Faster route</dt>
+    <dd style="color:var(--wait-ink)">{{ routing.faster_route }}</dd>
+    {% endif %}
+    {% if routing.alternates %}
+    <dt>Also considered</dt>
+    <dd>{% for a in routing.alternates %}<div style="margin-bottom:4px">
+        <span style="font-family:var(--mono);font-size:12.5px">{{ a.category_id }}</span> — {{ a.why_not }}
+      </div>{% endfor %}</dd>
+    {% endif %}
+  </dl>
+</div>
+{% elif routing and routing.out_of_scope %}
+<h2>Routing decision</h2>
+<div class="card">
+  <p style="margin-top:0"><strong>The agent declined to file this.</strong></p>
+  <p style="margin-bottom:0">{{ routing.out_of_scope_reason }}</p>
+</div>
+{% endif %}
+
+{% if case.draft_text %}
+<h2>What changed</h2>
+<div class="ba">
+  <div class="ba-col before">
+    <div class="ba-head">What they wrote</div>
+    <div class="ba-body">{{ case.narrative_raw }}</div>
+    <div class="ba-foot">
+      <span><span class="m">{{ case.narrative_raw.split()|length }}</span> words</span>
+      <span>no dates pinned</span>
+      <span>no authority named</span>
+    </div>
+  </div>
+  <div class="ba-col after">
+    <div class="ba-head">What we filed</div>
+    <div class="ba-body">{{ case.draft_text }}</div>
+    <div class="ba-foot">
+      <span><span class="m">{{ case.draft_text.split()|length }}</span> words</span>
+      {% if facts.reference_numbers %}
+        <span><span class="m">{{ facts.reference_numbers|length }}</span> reference{{ '' if facts.reference_numbers|length == 1 else 's' }} cited</span>
+      {% endif %}
+      {% if routing.category_name %}<span>routed to {{ routing.category_name }}</span>{% endif %}
+      <span>one specific ask</span>
+    </div>
+  </div>
+  <div class="ba-arrow">
+    The same complaint, restructured into something a department can actually action —
+    dated, referenced, addressed to the right desk, and asking for exactly one thing.
+  </div>
+</div>
+{% endif %}
+
+{% if facts.missing_info %}
+<h2>Blocking questions</h2>
+<div class="card tint-amber"><ul style="margin:0;padding-left:20px;color:var(--ink-2)">
+  {% for m in facts.missing_info %}<li>{{ m }}</li>{% endfor %}
+</ul></div>
+{% endif %}
+
+<h2>Correspondence</h2>
+{% if not actions %}<div class="empty">Nothing drafted yet.</div>{% endif %}
+{% for a in actions %}
+<div class="card">
+  <div class="queue-head">
+    <span class="pill rung">rung {{ a.rung }}</span>
+    <span class="pill kind">{{ a.kind }}</span>
+    <span class="subj">{{ a.subject }}</span>
+    <span style="margin-left:auto;font-size:12px;color:var(--ink-4)">{{ a.status }}</span>
+  </div>
+  <div class="queue-to">
+    {{ a.channel }}{% if a.recipient %} → <span class="addr">{{ a.recipient }}</span>{% endif %}
+  </div>
+  <pre class="draft">{{ a.content }}</pre>
+  {% if a.response_raw %}
+    <div style="margin-top:16px;font-size:10px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.09em;font-weight:560;margin-bottom:7px">Reply received</div>
+    <pre class="draft reply">{{ a.response_raw }}</pre>
+  {% endif %}
+</div>
+{% endfor %}
+
+<h2>Full trail</h2>
+<div class="card">
+  <div class="timeline">
+    {% for e in events %}
+    <div class="ev k-{{ e.kind }}">
+      <span class="when">{{ e.ts[:16] | replace("T", " ") }}</span>
+      <span class="kind">{{ e.kind }}</span>
+      <div class="what">{{ e.detail }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+{% if authed %}
+<h2>Operator actions</h2>
+<div class="card tint-indigo">
+  {% if not case.cpgrams_reg_no %}
+  <form method="post" action="/console/filed/{{ case.id }}" style="margin-bottom:22px">
+    <label>Citizen submitted — record the {{ settings.portal_name }} registration number
+      <input type="text" name="reg_no" placeholder="e.g. DOPOS/E/2026/0012345" required>
+    </label>
+    <button class="sm" type="submit" style="margin-top:10px">Record and start the clock</button>
+  </form>
+  {% endif %}
+
+  <form method="post" action="/console/response/{{ case.id }}">
+    <label>Paste the department's reply
+      <span class="hint">— the agent decides whether it actually counts as a resolution</span>
+      <textarea name="reply" required style="min-height:110px"
+        placeholder="Your grievance has been forwarded to the concerned office for necessary action. Grievance closed."></textarea>
+    </label>
+    <button class="sm" type="submit" style="margin-top:10px">Assess this reply</button>
+  </form>
+
+  <div class="btn-row" style="margin-top:20px;padding-top:16px;border-top:1px solid #dee2f4">
+    <form method="post" action="/console/nudge/{{ case.id }}">
+      <button class="sm ghost" type="submit">Skip the wait — advance now</button>
+    </form>
+    <span style="font-size:12.5px;color:var(--ink-4)">
+      Testing only. Makes this case due immediately and runs a tick.
+    </span>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

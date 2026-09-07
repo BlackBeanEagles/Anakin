@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}Persist — live grievance ledger{% endblock %}
+{% block body %}
+
+<section class="hero">
+  {% include "_art.html" %}
+  <div class="eyebrow">Public ledger</div>
+  <h1>Every grievance we're fighting, in the open.</h1>
+  <p>
+    Citizens send us a stuck parcel, an unpaid refund, a claim nobody answers. Persist routes it
+    to the correct authority, drafts the filing, then tracks and escalates it — for weeks if it
+    takes weeks. This page is the full record, wins and losses.
+  </p>
+
+  <div class="stats">
+    <div class="stat"><div class="n">{{ stats.total }}</div><div class="k">Cases taken</div></div>
+    <div class="stat"><div class="n">{{ stats.filed }}</div><div class="k">Filed</div></div>
+    <div class="stat good"><div class="n">{{ stats.resolved }}</div><div class="k">Resolved</div></div>
+    <div class="stat"><div class="n">{{ stats.win_rate }}%</div><div class="k">Win rate</div></div>
+    <div class="stat"><div class="n">{{ stats.actions_sent }}</div><div class="k">Actions taken</div></div>
+    <div class="stat good"><div class="n">₹{{ "{:,.0f}".format(stats.recovered) }}</div><div class="k">Recovered</div></div>
+  </div>
+</section>
+
+{% if cases %}
+<h2>Escalation ladder</h2>
+<div class="card">
+  <div class="ladder" style="margin-top:2px">
+    {% for r in RUNGS[:6] %}
+    <div class="step done s{{ r.n }}">
+      <span class="n">RUNG {{ r.n }}</span>{{ r.label }}
+    </div>
+    {% endfor %}
+  </div>
+  <div class="ladder-note">
+    Colour depth tracks how far a case has climbed. A grievance that gets a real answer stops
+    early; one that gets brushed off keeps going, and the ledger shows exactly how far.
+  </div>
+</div>
+{% endif %}
+
+<h2>Cases</h2>
+{% if not cases %}
+  <div class="empty">No cases yet. <a href="/file">File the first one →</a></div>
+{% endif %}
+{% for c in cases %}
+  {% set facts = c.facts_json | fromjson %}
+  <a class="case-row r{{ c.rung }}" href="/case/{{ c.id }}" style="color:inherit">
+    <div class="case-id">{{ c.id }}</div>
+    <div class="case-main">
+      <div class="sum">{{ facts.one_line_summary if facts and facts.one_line_summary else (c.narrative_raw[:110] ~ "…") }}</div>
+      <div class="case-meta">
+        {{ c.citizen_name }}
+        {% if c.cpgrams_reg_no %} · <span class="ref">{{ c.cpgrams_reg_no }}</span>{% endif %}
+        {% if c.amount_claimed %} · ₹{{ "{:,.0f}".format(c.amount_claimed) }} at stake{% endif %}
+      </div>
+    </div>
+    <div class="case-right">
+      {% if c.status == 'resolved' %}
+        <span class="pill resolved"><span class="dot"></span>Resolved</span>
+      {% elif c.status == 'closed_unresolved' %}
+        <span class="pill dead"><span class="dot"></span>Unresolved</span>
+      {% elif c.status in ('needs_info', 'awaiting_submission') %}
+        <span class="pill blocked"><span class="dot"></span>Waiting on citizen</span>
+      {% else %}
+        <span class="pill open"><span class="dot"></span>Active</span>
+      {% endif %}
+      <div style="margin-top:6px"><span class="pill rung">rung {{ c.rung }}/5</span></div>
+    </div>
+  </a>
+{% endfor %}
+
+<h2>Live activity</h2>
+{% if not events %}
+  <div class="empty">The agent hasn't done anything yet.</div>
+{% else %}
+<div class="card">
+  <div class="timeline">
+    {% for e in events %}
+    <div class="ev k-{{ e.kind }}">
+      <span class="when">{{ e.ts[:16] | replace("T", " ") }}</span>
+      <span class="kind">{{ e.kind }}</span>
+      <span class="kind case">{{ e.case_id }}</span>
+      <div class="what">{{ e.detail }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}

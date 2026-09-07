@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}File a grievance — Persist{% endblock %}
+{% block body %}
+
+<section class="hero">
+  {% include "_art.html" %}
+  <div class="eyebrow">Free · no account needed</div>
+  <h1>Tell us what went wrong. We'll fight it.</h1>
+  <p>
+    Free. We route your grievance to the correct central government authority, draft it properly,
+    file it, and then keep escalating until someone answers — the officer, the appellate authority,
+    the regional office by phone, the Director of Public Grievances.
+  </p>
+</section>
+
+{% if error %}<div class="banner err">{{ error }}</div>{% endif %}
+
+<form method="post" action="/file" class="card">
+  <label>Your name
+    <input type="text" name="name" required autocomplete="name">
+  </label>
+
+  <label>Email <span class="hint">— this is how we send you the filing packet and updates</span>
+    <input type="email" name="email" required autocomplete="email">
+  </label>
+
+  <label>Phone <span class="hint">— optional, only if you want us to call on your behalf</span>
+    <input type="text" name="phone" autocomplete="tel">
+  </label>
+
+  <label>What kind of problem is it?
+    <select name="category">
+      <option value="india_post">India Post — parcel lost, undelivered, delayed, damaged</option>
+      <option value="railways">Railways / IRCTC — refund, booking failure, service</option>
+      <option value="telecom">Telecom — billing, porting, network</option>
+      <option value="banking">Banking — failed transaction, charges</option>
+      <option value="epfo">EPFO / PF — stuck withdrawal, transfer</option>
+      <option value="passport">Passport / consular</option>
+      <option value="tax">Income tax refund</option>
+      <option value="lpg">LPG / gas connection</option>
+      <option value="aviation">Airline / airport</option>
+      <option value="other">Something else</option>
+    </select>
+  </label>
+
+  <label>What happened?
+    <span class="hint">— write it however it comes out. Include any tracking number, PNR,
+      transaction ID, or dates you have. We'll structure it.</span>
+    <textarea name="narrative" required
+      placeholder="I booked a Speed Post parcel on 12 August from Bangalore to Patna, consignment EX123456789IN. Tracking hasn't moved since 15 August. I called 1924 twice and visited the post office once, nobody can tell me anything. The parcel had documents worth about Rs 4000 to replace…"></textarea>
+  </label>
+
+  <div class="check">
+    <input type="checkbox" name="consent" id="consent" value="yes" required>
+    <label for="consent" style="margin:0;font-weight:400">
+      I authorise Persist to prepare and send correspondence about this grievance on my behalf.
+      I understand that <strong>I will submit the grievance myself</strong> on the government portal
+      using my own account — Persist will never ask for my password — and that a human reviews
+      every message before it is sent.
+    </label>
+  </div>
+
+  <div class="check">
+    <input type="checkbox" name="is_public" id="is_public" value="yes" checked>
+    <label for="is_public" style="margin:0;font-weight:400">
+      Show this case on the public ledger. Your name and a one-line summary appear; your contact
+      details and any sensitive numbers never do. Uncheck to keep it private.
+    </label>
+  </div>
+
+  <button type="submit" style="margin-top:20px">Take my case</button>
+</form>
+
+{% endblock %}

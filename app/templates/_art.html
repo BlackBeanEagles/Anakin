@@ -1,0 +1,43 @@
+{# Abstract "official document" geometry: seal rings, perforation runs, franking
+   bars and registration crosses, decomposed. Decoration only — it encodes nothing,
+   which is why it may use the accent hues freely while the data stays disciplined. #}
+<svg class="hero-art" viewBox="0 0 340 260" fill="none" aria-hidden="true" focusable="false">
+  <!-- seal: concentric rings, deliberately incomplete -->
+  <circle cx="232" cy="86" r="62" stroke="var(--art-1)" stroke-width="1.5" opacity=".55"/>
+  <circle cx="232" cy="86" r="50" stroke="var(--art-1)" stroke-width="3" opacity=".28"/>
+  <path d="M232 24a62 62 0 0 1 55 90" stroke="var(--art-2)" stroke-width="3" stroke-linecap="round" opacity=".8"/>
+  <circle cx="232" cy="86" r="27" stroke="var(--art-1)" stroke-width="1" opacity=".4"/>
+  <circle cx="232" cy="86" r="5" fill="var(--art-2)" opacity=".7"/>
+
+  <!-- franking bars: the ramp, rotated off-axis -->
+  <g transform="rotate(-13 120 172)" opacity=".85">
+    <rect x="44"  y="160" width="74" height="7" rx="3.5" fill="var(--rung-1)"/>
+    <rect x="44"  y="174" width="118" height="7" rx="3.5" fill="var(--rung-3)"/>
+    <rect x="44"  y="188" width="92" height="7" rx="3.5" fill="var(--rung-5)"/>
+    <rect x="44"  y="202" width="46" height="7" rx="3.5" fill="var(--art-2)"/>
+  </g>
+
+  <!-- perforation run -->
+  <g fill="var(--art-1)" opacity=".38">
+    {% for i in range(15) %}<circle cx="{{ 30 + i * 20 }}" cy="34" r="2.6"/>{% endfor %}
+  </g>
+
+  <!-- second perforation run, vertical, clipped -->
+  <g fill="var(--art-3)" opacity=".45">
+    {% for i in range(7) %}<circle cx="312" cy="{{ 150 + i * 15 }}" r="2.2"/>{% endfor %}
+  </g>
+
+  <!-- registration crosses -->
+  <g stroke="var(--art-4)" stroke-width="1.6" opacity=".6">
+    <path d="M28 214v18M19 223h18"/>
+  </g>
+  <g stroke="var(--art-1)" stroke-width="1.6" opacity=".45">
+    <path d="M300 46v14M293 53h14"/>
+  </g>
+
+  <!-- translucent overlap: two stamps laid on top of each other -->
+  <rect x="150" y="120" width="88" height="60" rx="4"
+        fill="var(--art-3)" opacity=".13" transform="rotate(7 194 150)"/>
+  <rect x="176" y="140" width="88" height="60" rx="4"
+        stroke="var(--art-2)" stroke-width="1.5" opacity=".4" transform="rotate(-5 220 170)"/>
+</svg>
