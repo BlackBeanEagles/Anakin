@@ -30,9 +30,9 @@ PROVIDERS: dict[str, Provider] = {
         kind="openai_compatible",
         base_url="https://api.groq.com/openai/v1",
         api_key_env="GROQ_API_KEY",
-        default_model="llama-3.3-70b-versatile",
+        default_model="openai/gpt-oss-120b",
         console_url="https://console.groq.com/keys",
-        notes="Fastest free option. If a model refuses tool calls, the JSON fallback catches it.",
+        notes="Fastest free option. gpt-oss-120b is their tool-use flagship, which is what this app runs on. Groq retires models without much notice - if you get a 404, ask the API what exists (GET /openai/v1/models); their docs page lags reality.",
     ),
     "gemini": Provider(
         key="gemini",
