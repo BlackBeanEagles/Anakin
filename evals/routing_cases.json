@@ -1,0 +1,166 @@
+{
+  "_meta": {
+    "purpose": "Labelled set for measuring routing accuracy - the product's core claim.",
+    "how_to_extend": "Add every real case you take, labelled with where it ACTUALLY got actioned. That turns your week of real cases into a growing eval set, which is the honest way to report accuracy.",
+    "note": "Expected labels follow app/taxonomy.json. Re-check them after you verify the taxonomy against the live portal."
+  },
+  "cases": [
+    {
+      "id": "post-nondelivery-1",
+      "narrative": "I sent college documents by Speed Post from Jayanagar Bangalore on 12 August to Patna, consignment EX412876539IN. Tracking stopped updating on 14 August at the sorting hub. Called 1924 three times, went to the post office once, nobody can tell me anything. It has been over a month.",
+      "expect_ministry": "DOPOS",
+      "expect_category": "DOPOS-NONDEL",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "post-damage-1",
+      "narrative": "My parcel arrived from Delhi but the box was torn open and the two ceramic items inside were smashed. The postman made me sign before I could look. Consignment CD998211345IN, delivered 3 September.",
+      "expect_ministry": "DOPOS",
+      "expect_category": "DOPOS-DAMAGE",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "post-moneyorder-1",
+      "narrative": "I sent a money order of Rs 5000 to my mother in her village on 20 August. She has still not received the payment and the post office there says they have no record of it. I have the receipt.",
+      "expect_ministry": "DOPOS",
+      "expect_category": "DOPOS-MO",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "rail-tdr-1",
+      "narrative": "Booked tatkal on IRCTC 3 September, train 12627, PNR 6472891053. Rs 1845 debited from HDFC but no ticket generated. Filed TDR reference 100004829173 on 4 September, still shows under process three weeks later. 139 never picks up.",
+      "expect_ministry": "MOR",
+      "expect_category": "MOR-REFUND",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "rail-catering-1",
+      "narrative": "On train 12951 last Tuesday the pantry charged me Rs 150 for a veg meal that the menu says is Rs 80, and refused to give a bill. When I asked for the supervisor the staff got aggressive. Coach B4, seat 34.",
+      "expect_ministry": "MOR",
+      "expect_category": "MOR-CATER",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "rail-cleanliness-1",
+      "narrative": "Travelled in AC 3 tier on 11 September, coach B2 of train 12658. The toilets were unusable the entire journey, no water at all from the second hour, and the bedroll was visibly dirty. Complained to the coach attendant, nothing happened.",
+      "expect_ministry": "MOR",
+      "expect_category": "MOR-CLEAN",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "epfo-claim-1",
+      "narrative": "I left my job in March and applied for PF withdrawal in May. My UAN is 101234567890. The claim has been showing as under process for four months. My ex-employer says they have done their part. I have raised it on the EPFO portal twice with no reply.",
+      "expect_ministry": "EPFO",
+      "expect_category": "EPFO-CLAIM",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "dot-mnp-1",
+      "narrative": "I requested to port my number from one operator to another on 1 September. The porting keeps getting rejected saying there are outstanding dues, but my account shows zero balance due and I have the paid bill receipts. Three attempts now.",
+      "expect_ministry": "DOT",
+      "expect_category": "DOT-MNP",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "dfs-failed-txn-1",
+      "narrative": "I withdrew Rs 10000 from an SBI ATM on 28 August. The machine did not dispense any cash but the amount was debited. I raised a complaint at the branch, they gave me a docket number, and it has been three weeks with no reversal.",
+      "expect_ministry": "DFS",
+      "expect_category": "DFS-TXN",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "mea-passport-1",
+      "narrative": "Applied for passport renewal on 2 July, file number BN1234567890123. Police verification was completed on 20 July according to the status page but it has been stuck at that stage since. I have a job offer abroad with a joining date next month.",
+      "expect_ministry": "MEA",
+      "expect_category": "MEA-PASSPORT",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "cbdt-refund-1",
+      "narrative": "Filed my ITR for AY 2025-26 in July, it was processed in August showing a refund of Rs 23,450 due. The refund has not been credited. My bank account is pre-validated and the details on the portal are correct.",
+      "expect_ministry": "CBDT",
+      "expect_category": "CBDT-REFUND",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "mopng-subsidy-1",
+      "narrative": "My LPG subsidy has not come into my account for the last five refills. The distributor says it is credited from their side and the bank says nothing has come. My consumer number is with Indane.",
+      "expect_ministry": "MOPNG",
+      "expect_category": "MOPNG-SUBSIDY",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "moca-baggage-1",
+      "narrative": "Flew Delhi to Kochi on 5 September. My checked bag never arrived. The airline desk filed a property irregularity report but nobody has called me back in ten days and their helpline just cycles through menus. The bag had about Rs 30,000 of belongings.",
+      "expect_ministry": "MOCA",
+      "expect_category": "MOCA-BAG",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "dppw-pension-1",
+      "narrative": "My father was a central government pensioner who passed away in June. We applied for family pension for my mother in July with all documents submitted to the bank. It has not been sanctioned and she has had no income for three months.",
+      "expect_ministry": "DPPW",
+      "expect_category": "DPPW-FAMILY",
+      "expect_out_of_scope": false
+    },
+    {
+      "id": "oos-municipal-1",
+      "narrative": "There is a huge pothole outside my building on 4th cross road in Indiranagar and two scooters have already fallen. BBMP came once, looked at it, and left. I have complained on the BBMP app twice.",
+      "expect_ministry": "",
+      "expect_category": "",
+      "expect_out_of_scope": true
+    },
+    {
+      "id": "oos-state-police-1",
+      "narrative": "My scooter was stolen from outside my house last week. The local police station refused to register an FIR properly and told me to come back later. I want action against them.",
+      "expect_ministry": "",
+      "expect_category": "",
+      "expect_out_of_scope": true
+    },
+    {
+      "id": "oos-electricity-1",
+      "narrative": "My electricity bill from BESCOM this month is Rs 12,000 when it is normally Rs 1,800. There is clearly a meter reading error. The local office keeps telling me to pay first and claim later.",
+      "expect_ministry": "",
+      "expect_category": "",
+      "expect_out_of_scope": true
+    },
+    {
+      "id": "oos-court-1",
+      "narrative": "I have a property dispute case pending in the district court for six years. The judge keeps giving dates and nothing moves. I want the government to make the court decide faster.",
+      "expect_ministry": "",
+      "expect_category": "",
+      "expect_out_of_scope": true
+    },
+    {
+      "id": "oos-rti-1",
+      "narrative": "I want to know how much money was spent on the road widening project in my ward and who the contractor was. Please get me these details from the government.",
+      "expect_ministry": "",
+      "expect_category": "",
+      "expect_out_of_scope": true
+    },
+    {
+      "id": "trap-bank-vs-railways-1",
+      "narrative": "IRCTC took Rs 2,340 from my ICICI account on 8 September for a ticket that was never issued. IRCTC says the transaction failed and the bank must reverse it. The bank says IRCTC is holding the money and they cannot do anything.",
+      "expect_ministry": "MOR",
+      "expect_category": "MOR-BOOKING",
+      "expect_out_of_scope": false,
+      "why_hard": "Both a bank and a railway are named, and each blames the other. The funds sit with IRCTC, so it routes to Railways, not DFS."
+    },
+    {
+      "id": "trap-courier-not-post-1",
+      "narrative": "I ordered a phone online and the courier company marked it delivered but I never received it. The seller says talk to the courier, the courier says talk to the seller. Nobody will help me and it cost Rs 18,000.",
+      "expect_ministry": "DOCA",
+      "expect_category": "DOCA-ECOM",
+      "expect_out_of_scope": false,
+      "why_hard": "Sounds postal, but a private courier and an e-commerce seller are not India Post - this is a consumer matter."
+    },
+    {
+      "id": "trap-speedpost-delay-vs-nondelivery-1",
+      "narrative": "My Speed Post article EX556677889IN was booked on 1 September with a two day commitment and finally arrived on 12 September. It did eventually reach, but eleven days late, and I missed the deadline it was sent for. I want the Speed Post charges refunded.",
+      "expect_ministry": "DOPOS",
+      "expect_category": "DOPOS-SPEED",
+      "expect_out_of_scope": false,
+      "why_hard": "It arrived, so this is not non-delivery; the specific ask is a refund of Speed Post charges for a missed guarantee."
+    }
+  ]
+}
