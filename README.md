@@ -86,7 +86,7 @@ in `agent/` knows which model is behind it.
 
 | Provider | `LLM_PROVIDER` | Default model | Key |
 |----------|----------------|---------------|-----|
-| **Groq** | `groq` | `llama-3.3-70b-versatile` | free — [console.groq.com/keys](https://console.groq.com/keys) |
+| **Groq** | `groq` | `openai/gpt-oss-120b` | free — [console.groq.com/keys](https://console.groq.com/keys) |
 | **Gemini** | `gemini` | `gemini-2.0-flash` | free — [aistudio.google.com/apikey](https://aistudio.google.com/apikey) |
 | **Anthropic** | `anthropic` | `claude-opus-5` | paid |
 | **Mock** | `mock` | — | none; canned answers for offline UI work |
@@ -96,6 +96,14 @@ To go live on the free tier:
 ```
 LLM_PROVIDER=groq
 GROQ_API_KEY=gsk_...
+```
+
+Groq **retires models without much notice** — `llama-3.3-70b-versatile` was still
+listed as active on their docs page while the API returned 404 for it. When that
+happens, ask the API what actually exists rather than trusting the docs:
+
+```bash
+curl -s https://api.groq.com/openai/v1/models -H "Authorization: Bearer $GROQ_API_KEY"
 ```
 
 Groq and Gemini go through their OpenAI-compatible endpoints. Because free-tier models
@@ -150,7 +158,9 @@ app/
   inbox.py       inbound IMAP — replies ingested and assessed automatically
   whatsapp.py    WhatsApp intake with an explicit consent handshake
   notify.py      status updates to the citizen
-  taxonomy.json  CPGRAMS ministry/category tree  ⚠️ SEED DATA, UNVERIFIED
+  taxonomy.json  CPGRAMS tree; officer contacts verified, categories not
+  web.py         polite fetch layer for public government pages
+  watch.py       reads live status pages before escalating
   agent/
     extract.py   narrative → structured, dated, referenced facts
     route.py     facts → ministry/category, with confidence and a rationale
@@ -287,19 +297,37 @@ keyword router over the same taxonomy — it stands in for what a citizen skimmi
 dropdown does. The claim "reasoning about routing is worth something" is worthless
 unless it's measured against the obvious approach, so it is.
 
-Measured on the current 22-case set:
+Measured on the 22-case set, Groq `openai/gpt-oss-120b`, 2026-09-08:
 
 ```
-              agent    keyword baseline    delta
-  scope         ...              77.3%       ...
-  ministry      ...              68.2%       ...
-  category      ...              40.9%       ...
+                 agent    keyword baseline     delta
+  scope         100.0%               77.3%    +22.7
+  ministry      100.0%               68.2%    +31.8
+  category       95.5%               40.9%    +54.6
+
+  22 cases · 0 errors · 13m10s
 ```
 
-Note *how* the baseline fails: it gets 41% of categories right, and it misfiles **all
-five out-of-scope cases into Department of Posts**, because a keyword matcher has no
-concept of scope and cannot refuse. That's the number to lead with — every one of those
-is a citizen who waits three weeks to be told "not related to this department."
+**13 of 22 grievances routed the obvious way would have landed in the wrong place** —
+closed weeks later as "not related to this department". That is the counterfactual, and
+it is the number to lead with.
+
+Where the baseline fails is as informative as the margin: it misfiles **all five
+out-of-scope cases into Department of Posts**, because a keyword matcher has no concept
+of scope and structurally cannot refuse. The agent got all five right, plus both trap
+cases — the private courier that sounds like India Post, and the delay that is not a
+non-delivery.
+
+The one miss: `post-nondelivery-1` was filed as *Speed Post service issues* rather than
+*Non-delivery of article*. Defensible — it is a Speed Post article — but the specific
+ask was tracing, not a charges refund.
+
+### Do not cite the confidence number
+
+Confidence came back 0.92–1.00 on almost every case, including the one it got wrong
+(0.96). With a single miss there is not enough signal to say whether it is calibrated,
+and a number that never varies is not evidence of anything. Report accuracy; leave
+confidence out of the pitch until a larger sample says something.
 
 (Agent columns fill in once you set a real `LLM_PROVIDER`; the baseline needs no key.)
 

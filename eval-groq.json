@@ -1,0 +1,438 @@
+{
+  "summary": {
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "cases": 22,
+    "errors": 0,
+    "scope_accuracy": 100.0,
+    "ministry_accuracy": 100.0,
+    "category_accuracy": 95.5,
+    "mean_confidence": 0.92,
+    "seconds": 789.5,
+    "baseline": {
+      "scope_accuracy": 77.3,
+      "ministry_accuracy": 68.2,
+      "category_accuracy": 40.9
+    }
+  },
+  "results": [
+    {
+      "id": "post-nondelivery-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": false,
+      "confidence": 0.96,
+      "got_ministry": "DOPOS",
+      "got_category": "DOPOS-SPEED",
+      "want_ministry": "DOPOS",
+      "want_category": "DOPOS-NONDEL",
+      "rationale": "Consignment number EX412876539IN and mention of Speed Post tracking stoppage indicate a Speed Post service issue.",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-DELAY"
+      }
+    },
+    {
+      "id": "post-damage-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "DOPOS",
+      "got_category": "DOPOS-DAMAGE",
+      "want_ministry": "DOPOS",
+      "want_category": "DOPOS-DAMAGE",
+      "rationale": "Consignment number CD998211345IN and report of torn box with smashed ceramic items",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-DELAY"
+      }
+    },
+    {
+      "id": "post-moneyorder-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.95,
+      "got_ministry": "DOPOS",
+      "got_category": "DOPOS-MO",
+      "want_ministry": "DOPOS",
+      "want_category": "DOPOS-MO",
+      "rationale": "The grievance mentions a money order of Rs\u202f5000 sent via post office with no record at the destination, which matches the DOPOS-MO Money Order / remittance category.",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-LOSS"
+      }
+    },
+    {
+      "id": "rail-tdr-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "MOR",
+      "got_category": "MOR-REFUND",
+      "want_ministry": "MOR",
+      "want_category": "MOR-REFUND",
+      "rationale": "Presence of TDR reference 100004829173 and request for refund of Rs 1845 after tatkal booking failure",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "MOR",
+        "got_category": "MOR-REFUND"
+      }
+    },
+    {
+      "id": "rail-catering-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.95,
+      "got_ministry": "MOR",
+      "got_category": "MOR-CATER",
+      "want_ministry": "MOR",
+      "want_category": "MOR-CATER",
+      "rationale": "Overcharged veg meal price Rs 150 vs Rs 80 on train 12951",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": false,
+        "got_ministry": "MOR",
+        "got_category": "MOR-DELAY"
+      }
+    },
+    {
+      "id": "rail-cleanliness-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.92,
+      "got_ministry": "MOR",
+      "got_category": "MOR-CLEAN",
+      "want_ministry": "MOR",
+      "want_category": "MOR-CLEAN",
+      "rationale": "Toilets unusable, no water, and dirty bedroll on train 12658",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "MOR",
+        "got_category": "MOR-CLEAN"
+      }
+    },
+    {
+      "id": "epfo-claim-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "EPFO",
+      "got_category": "EPFO-CLAIM",
+      "want_ministry": "EPFO",
+      "want_category": "EPFO-CLAIM",
+      "rationale": "The grievance mentions a PF withdrawal claim with a UAN number pending for four months.",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "EPFO",
+        "got_category": "EPFO-CLAIM"
+      }
+    },
+    {
+      "id": "dot-mnp-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.95,
+      "got_ministry": "DOT",
+      "got_category": "DOT-MNP",
+      "want_ministry": "DOT",
+      "want_category": "DOT-MNP",
+      "rationale": "The grievance mentions a porting request being rejected due to alleged dues, directly matching the 'Number portability' signal.",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "DOT",
+        "got_category": "DOT-MNP"
+      }
+    },
+    {
+      "id": "dfs-failed-txn-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "DFS",
+      "got_category": "DFS-TXN",
+      "want_ministry": "DFS",
+      "want_category": "DFS-TXN",
+      "rationale": "ATM dispensed no cash but Rs\u202f10,000 was debited",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "DFS",
+        "got_category": "DFS-TXN"
+      }
+    },
+    {
+      "id": "mea-passport-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "MEA",
+      "got_category": "MEA-PASSPORT",
+      "want_ministry": "MEA",
+      "want_category": "MEA-PASSPORT",
+      "rationale": "Police verification completed on 20 July but status stuck thereafter, indicating passport issuance delay.",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "MEA",
+        "got_category": "MEA-PASSPORT"
+      }
+    },
+    {
+      "id": "cbdt-refund-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "CBDT",
+      "got_category": "CBDT-REFUND",
+      "want_ministry": "CBDT",
+      "want_category": "CBDT-REFUND",
+      "rationale": "Refund not credited to pre-validated bank account after ITR processed",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": false,
+        "category_ok": false,
+        "got_ministry": "DFS",
+        "got_category": "DFS-TXN"
+      }
+    },
+    {
+      "id": "mopng-subsidy-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.95,
+      "got_ministry": "MOPNG",
+      "got_category": "MOPNG-SUBSIDY",
+      "want_ministry": "MOPNG",
+      "want_category": "MOPNG-SUBSIDY",
+      "rationale": "subsidy not credited",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "MOPNG",
+        "got_category": "MOPNG-SUBSIDY"
+      }
+    },
+    {
+      "id": "moca-baggage-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "MOCA",
+      "got_category": "MOCA-BAG",
+      "want_ministry": "MOCA",
+      "want_category": "MOCA-BAG",
+      "rationale": "Missing checked bag after flight, described as 'Checked bag never arrived' and airline filed a property irregularity report.",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": false,
+        "got_ministry": "MOCA",
+        "got_category": "MOCA-REFUND"
+      }
+    },
+    {
+      "id": "dppw-pension-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.95,
+      "got_ministry": "DPPW",
+      "got_category": "DPPW-FAMILY",
+      "want_ministry": "DPPW",
+      "want_category": "DPPW-FAMILY",
+      "rationale": "The grievance concerns a family pension not being sanctioned after the death of a central government pensioner.",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "DPPW",
+        "got_category": "DPPW-FAMILY"
+      }
+    },
+    {
+      "id": "oos-municipal-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.99,
+      "got_ministry": "",
+      "got_category": "",
+      "want_ministry": "",
+      "want_category": "",
+      "rationale": "The grievance concerns a pothole on a city road (Indiranagar, Bangalore) and mentions BBMP, indicating it is a municipal service issue.",
+      "baseline": {
+        "scope_ok": false,
+        "ministry_ok": false,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-DELAY"
+      }
+    },
+    {
+      "id": "oos-state-police-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.99,
+      "got_ministry": "",
+      "got_category": "",
+      "want_ministry": "",
+      "want_category": "",
+      "rationale": "Police refused to file FIR for stolen scooter",
+      "baseline": {
+        "scope_ok": false,
+        "ministry_ok": false,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-DELAY"
+      }
+    },
+    {
+      "id": "oos-electricity-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "",
+      "got_category": "",
+      "want_ministry": "",
+      "want_category": "",
+      "rationale": "BESCOM is a state electricity board, which falls under the out-of-scope category for CPGRAMS.",
+      "baseline": {
+        "scope_ok": false,
+        "ministry_ok": false,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-DELAY"
+      }
+    },
+    {
+      "id": "oos-court-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 1.0,
+      "got_ministry": "",
+      "got_category": "",
+      "want_ministry": "",
+      "want_category": "",
+      "rationale": "Citizen asks to direct a district court to expedite a pending property dispute, a court matter outside CPGRAMS scope.",
+      "baseline": {
+        "scope_ok": false,
+        "ministry_ok": false,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-DELAY"
+      }
+    },
+    {
+      "id": "oos-rti-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.0,
+      "got_ministry": "",
+      "got_category": "",
+      "want_ministry": "",
+      "want_category": "",
+      "rationale": "The request concerns a local road widening project in a specific ward, which falls under municipal/urban local body jurisdiction, not a central government scheme.",
+      "baseline": {
+        "scope_ok": false,
+        "ministry_ok": false,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-DELAY"
+      }
+    },
+    {
+      "id": "trap-bank-vs-railways-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "MOR",
+      "got_category": "MOR-BOOKING",
+      "want_ministry": "MOR",
+      "want_category": "MOR-BOOKING",
+      "rationale": "IRCTC deducted Rs 2,340 for a ticket that was never issued (booking/payment failure).",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": true,
+        "got_ministry": "MOR",
+        "got_category": "MOR-BOOKING"
+      }
+    },
+    {
+      "id": "trap-courier-not-post-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.96,
+      "got_ministry": "DOCA",
+      "got_category": "DOCA-ECOM",
+      "want_ministry": "DOCA",
+      "want_category": "DOCA-ECOM",
+      "rationale": "online phone order not delivered, seller and courier blame each other, refund request",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": false,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-NONDEL"
+      }
+    },
+    {
+      "id": "trap-speedpost-delay-vs-nondelivery-1",
+      "scope_ok": true,
+      "ministry_ok": true,
+      "category_ok": true,
+      "confidence": 0.98,
+      "got_ministry": "DOPOS",
+      "got_category": "DOPOS-SPEED",
+      "want_ministry": "DOPOS",
+      "want_category": "DOPOS-SPEED",
+      "rationale": "mention of Speed Post and missed two\u2011day commitment",
+      "baseline": {
+        "scope_ok": true,
+        "ministry_ok": true,
+        "category_ok": false,
+        "got_ministry": "DOPOS",
+        "got_category": "DOPOS-NONDEL"
+      }
+    }
+  ]
+}
