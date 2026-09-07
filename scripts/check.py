@@ -14,6 +14,7 @@ SUITES = [
     ("schema coercion", ["scripts/test_coerce.py"]),
     ("escalation ladder", ["scripts/test_ladder.py"]),
     ("fixed-bug regressions", ["scripts/test_bugs.py"]),
+    ("live web layer", ["scripts/test_web.py"]),
     ("routing baseline", ["scripts/run_eval.py", "--baseline-only"]),
 ]
 

@@ -114,6 +114,27 @@ def main() -> int:
         print(f"{BAD} {len(placeholders)} placeholder addresses remain: {', '.join(placeholders)}")
         problems += 1
 
+    # ---- live web reading
+    print()
+    if not settings.web_reading_enabled:
+        print(f"{WARN} web reading disabled (WEB_READING=false) - the agent escalates")
+        print("         on a timer alone and cannot cite live evidence")
+    else:
+        from app import watch, web as webmod
+        webmod.reset_tick_budget()
+        probe = webmod.get(settings.nodal_directory_url)
+        if not probe.ok:
+            print(f"{WARN} officer directory unreachable ({probe.reason}) - the agent")
+            print("         falls back to its timer, which is safe but weaker")
+        else:
+            r = watch.refresh_officer_directory()
+            if r["drift"]:
+                print(f"{WARN} {len(r['drift'])} contact(s) no longer in the live directory: "
+                      f"{', '.join(d['ministry_id'] for d in r['drift'])}")
+                print(f"         Re-check {settings.nodal_directory_url}")
+            else:
+                print(f"{OK} officer directory live-checked - all contacts still listed")
+
     # ---- mail rails
     print()
     if settings.dry_run:
