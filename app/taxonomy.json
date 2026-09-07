@@ -1,0 +1,249 @@
+{
+  "_meta": {
+    "categories_verified": false,
+    "officers_verified": true,
+    "officers_source": "https://pgportal.gov.in/Home/NodalPgOfficers",
+    "officers_checked_on": "2026-09-07",
+    "note": "OFFICER CONTACTS are taken from the official CPGRAMS Nodal Public Grievance Officers directory. CATEGORY NAMES are still seed data and have NOT been checked against the live portal dropdowns - do that by filing one grievance manually and screenshotting every level.",
+    "email_kind": {
+      "role": "A durable departmental role account. Safe to use; survives postholder changes.",
+      "individual": "A named officer's address. Correct today, but these rotate - re-check against the source before a long campaign.",
+      "none": "No published address. The agent must not invent one; the email rung is skipped and it falls through to phone or portal."
+    }
+  },
+  "ministries": [
+    {
+      "id": "DOPOS",
+      "name": "Department of Posts",
+      "parent": "Ministry of Communications",
+      "keywords": ["parcel", "speed post", "registered post", "courier", "india post", "consignment", "money order", "postman", "pin code", "article", "booking", "delivery"],
+      "grievance_officer_email": "ddgpgq@indiapost.gov.in",
+      "email_kind": "role",
+      "officer_name": "Shri Rupesh Pal",
+      "officer_designation": "ADG (PG)",
+      "officer_phone": "011-23096087",
+      "helpline": "1924",
+      "categories": [
+        {"id": "DOPOS-NONDEL", "name": "Non-delivery of article", "hint": "Article booked but never delivered; tracking stalled or shows wrong status."},
+        {"id": "DOPOS-DELAY", "name": "Delay in delivery", "hint": "Delivered, but far outside the committed transit time."},
+        {"id": "DOPOS-LOSS", "name": "Loss of article", "hint": "Article confirmed lost or untraceable in the network."},
+        {"id": "DOPOS-DAMAGE", "name": "Damage / pilferage of article", "hint": "Contents damaged, missing, or tampered on arrival."},
+        {"id": "DOPOS-SPEED", "name": "Speed Post service issues", "hint": "Speed Post specific: guaranteed delivery not met, refund of Speed Post charges."},
+        {"id": "DOPOS-MO", "name": "Money Order / remittance", "hint": "Money order not paid out, wrong payee, or amount discrepancy."},
+        {"id": "DOPOS-INTL", "name": "International mail", "hint": "Inbound or outbound foreign post, customs holds, tracking gaps."},
+        {"id": "DOPOS-OFFICE", "name": "Post office service / staff", "hint": "Counter service refusal, staff conduct, office timings, facilities."},
+        {"id": "DOPOS-REFUND", "name": "Refund of postal charges", "hint": "Claiming back paid postage after a service failure."}
+      ]
+    },
+    {
+      "id": "MOR",
+      "name": "Ministry of Railways (Railway Board)",
+      "parent": "Ministry of Railways",
+      "keywords": ["train", "irctc", "pnr", "ticket", "tatkal", "railway", "coach", "reservation", "tdr", "waitlist", "refund", "platform", "rac"],
+      "grievance_officer_email": "edpg@rb.railnet.gov.in",
+      "email_kind": "role",
+      "officer_name": "Shri Ratnesh Kumar Jha",
+      "officer_designation": "Executive Director (PG)",
+      "officer_phone": "011-23386203",
+      "helpline": "139",
+      "categories": [
+        {"id": "MOR-REFUND", "name": "Refund not received (TDR / cancellation)", "hint": "TDR filed or ticket cancelled but money never credited back."},
+        {"id": "MOR-BOOKING", "name": "IRCTC booking / payment failure", "hint": "Amount debited but ticket not issued; double debit; failed transaction."},
+        {"id": "MOR-DELAY", "name": "Train delay / cancellation", "hint": "Service not run as scheduled; consequential loss."},
+        {"id": "MOR-CATER", "name": "Catering / food quality", "hint": "Overcharging, quality, unavailability of booked meals."},
+        {"id": "MOR-CLEAN", "name": "Cleanliness / coach maintenance", "hint": "Sanitation, bedding, toilets, AC failure."},
+        {"id": "MOR-STAFF", "name": "Staff behaviour", "hint": "Conduct of TTE, catering, or station staff."},
+        {"id": "MOR-LUGGAGE", "name": "Luggage / theft", "hint": "Loss or theft of registered or carried luggage."},
+        {"id": "MOR-ACCESS", "name": "Divyangjan / senior citizen facilities", "hint": "Accessibility, reserved quota, wheelchair, ramp."}
+      ]
+    },
+    {
+      "id": "DOT",
+      "name": "Department of Telecommunications",
+      "parent": "Ministry of Communications",
+      "keywords": ["mobile", "sim", "network", "broadband", "telecom", "recharge", "porting", "mnp", "call drop", "spam", "dnd"],
+      "grievance_officer_email": "dirpg.hq-dot@gov.in",
+      "email_kind": "role",
+      "officer_name": "Sh. B. M. Patel",
+      "officer_designation": "Director (MOC PG)",
+      "officer_phone": "011-23220537",
+      "helpline": "1963",
+      "categories": [
+        {"id": "DOT-BILL", "name": "Billing dispute", "hint": "Incorrect charges, unrequested value-added services."},
+        {"id": "DOT-MNP", "name": "Number portability", "hint": "Porting request rejected or stalled."},
+        {"id": "DOT-QOS", "name": "Quality of service", "hint": "Persistent call drops, no coverage, broadband downtime."},
+        {"id": "DOT-SPAM", "name": "Unsolicited commercial calls / DND", "hint": "Spam despite DND registration."}
+      ]
+    },
+    {
+      "id": "DFS",
+      "name": "Department of Financial Services (Banking Division)",
+      "parent": "Ministry of Finance",
+      "keywords": ["bank", "atm", "upi", "account", "loan", "cheque", "debit", "credit card", "kyc", "neft", "imps", "branch"],
+      "grievance_officer_email": "dir.sa-dfs@gov.in",
+      "email_kind": "role",
+      "officer_name": "Shri Swapnil Agrawal",
+      "officer_designation": "Director",
+      "officer_phone": "011-23346785",
+      "helpline": "14448",
+      "note": "RBI's own ombudsman scheme (cms.rbi.org.in) is often the faster route for a bank dispute. Consider it before escalating here.",
+      "categories": [
+        {"id": "DFS-TXN", "name": "Failed transaction / money debited", "hint": "ATM, UPI or NEFT debit with no credit and no reversal."},
+        {"id": "DFS-CHARGE", "name": "Unauthorised charges", "hint": "Fees levied without disclosure or consent."},
+        {"id": "DFS-SERVICE", "name": "Branch service / account operations", "hint": "Account opening, KYC, passbook, closure refusals."},
+        {"id": "DFS-LOAN", "name": "Loan / interest dispute", "hint": "Sanction, foreclosure charges, credit report errors."}
+      ]
+    },
+    {
+      "id": "EPFO",
+      "name": "Ministry of Labour and Employment (EPFO matters)",
+      "parent": "Ministry of Labour and Employment",
+      "keywords": ["pf", "provident fund", "uan", "epf", "withdrawal", "pension", "employer", "claim rejected"],
+      "grievance_officer_email": "sajith.edu@nic.in",
+      "email_kind": "individual",
+      "officer_name": "Shri G. Sajith Kumar",
+      "officer_designation": "Deputy Secretary and Nodal PGO",
+      "officer_phone": "011-23719054",
+      "helpline": "14470",
+      "note": "EPFO has NO separate CPGRAMS nodal entry - it runs its own portal, EPFiGMS (epfigms.gov.in), and that is usually the faster first route. CPGRAMS reaches it via Ministry of Labour and Employment. The EPFO central grievance address is rc.csd@epfindia.gov.in.",
+      "alternate_portal": "https://epfigms.gov.in",
+      "categories": [
+        {"id": "EPFO-CLAIM", "name": "PF withdrawal claim stuck / rejected", "hint": "Claim pending beyond timeline or rejected without reason."},
+        {"id": "EPFO-TRANSFER", "name": "PF transfer between employers", "hint": "Transfer request not actioned."},
+        {"id": "EPFO-KYC", "name": "UAN / KYC / member profile", "hint": "Name, DOB, Aadhaar seeding mismatches blocking a claim."}
+      ]
+    },
+    {
+      "id": "MEA",
+      "name": "Ministry of External Affairs",
+      "parent": "Ministry of External Affairs",
+      "keywords": ["passport", "visa", "psk", "police verification", "consular", "apostille", "embassy", "nri"],
+      "grievance_officer_email": "",
+      "email_kind": "none",
+      "officer_name": "Ms. Esha Srivastava",
+      "officer_designation": "Joint Secretary",
+      "officer_phone": "011-23384529",
+      "helpline": "1800-258-1800",
+      "note": "The CPGRAMS directory lists a phone number but no email for this officer. The agent must not invent one - the email rung is skipped and the case goes to the phone rung instead.",
+      "categories": [
+        {"id": "MEA-PASSPORT", "name": "Passport issuance delay", "hint": "Application beyond stated timeline, stuck at police verification."},
+        {"id": "MEA-APPT", "name": "Appointment availability", "hint": "No PSK slots released; tatkal access."},
+        {"id": "MEA-CONSULAR", "name": "Consular services abroad", "hint": "Embassy or consulate service failure."}
+      ]
+    },
+    {
+      "id": "CBDT",
+      "name": "Central Board of Direct Taxes (Income Tax)",
+      "parent": "Ministry of Finance",
+      "keywords": ["income tax", "itr", "refund", "pan", "tds", "assessment", "26as", "e-filing"],
+      "grievance_officer_email": "delhi.addldit.eservices@incometax.gov.in",
+      "email_kind": "individual",
+      "officer_name": "Swapna Devireddy",
+      "officer_designation": "Addl. Director of Income Tax (TPS-II)",
+      "officer_phone": "011-23416133",
+      "helpline": "1800-103-0025",
+      "categories": [
+        {"id": "CBDT-REFUND", "name": "Income tax refund not received", "hint": "ITR processed but refund not credited."},
+        {"id": "CBDT-TDS", "name": "TDS credit mismatch", "hint": "Deducted TDS not reflecting in 26AS/AIS."},
+        {"id": "CBDT-PAN", "name": "PAN services", "hint": "PAN correction, duplicate, linking issues."}
+      ]
+    },
+    {
+      "id": "MOPNG",
+      "name": "Ministry of Petroleum and Natural Gas",
+      "parent": "Ministry of Petroleum and Natural Gas",
+      "keywords": ["lpg", "gas cylinder", "subsidy", "connection", "distributor", "ujjwala", "refill"],
+      "grievance_officer_email": "aditya.singh@nic.in",
+      "email_kind": "individual",
+      "officer_name": "Shri Aditya Shekhar Singh",
+      "officer_designation": "Deputy Secretary",
+      "officer_phone": "011-24011194",
+      "helpline": "1906",
+      "categories": [
+        {"id": "MOPNG-REFILL", "name": "Cylinder refill not delivered", "hint": "Booked refill undelivered or delayed."},
+        {"id": "MOPNG-SUBSIDY", "name": "Subsidy not credited", "hint": "DBT subsidy missing from account."},
+        {"id": "MOPNG-DIST", "name": "Distributor conduct / overcharging", "hint": "Charging above list price, forced purchases."}
+      ]
+    },
+    {
+      "id": "MOCA",
+      "name": "Ministry of Civil Aviation",
+      "parent": "Ministry of Civil Aviation",
+      "keywords": ["flight", "airline", "airport", "baggage", "boarding", "dgca", "cancellation", "compensation"],
+      "grievance_officer_email": "ss.mishra@nic.in",
+      "email_kind": "individual",
+      "officer_name": "Shri Sudhansu Sekhar Mishra",
+      "officer_designation": "Deputy Secretary and PGO",
+      "officer_phone": "011-24610364",
+      "helpline": "1800-11-1600",
+      "note": "AirSewa (airsewa.gov.in) is the airline-specific route and is usually faster for a single flight complaint.",
+      "categories": [
+        {"id": "MOCA-REFUND", "name": "Airline refund not processed", "hint": "Cancelled flight refund beyond mandated timeline."},
+        {"id": "MOCA-BAG", "name": "Baggage loss or damage", "hint": "Checked baggage lost, delayed, or damaged."},
+        {"id": "MOCA-DENIED", "name": "Denied boarding / delay compensation", "hint": "Overbooking, long delay, cancellation compensation."}
+      ]
+    },
+    {
+      "id": "DOCA",
+      "name": "Department of Consumer Affairs",
+      "parent": "Ministry of Consumer Affairs, Food and Public Distribution",
+      "keywords": ["consumer", "e-commerce", "seller", "warranty", "refund", "defective", "misleading ad", "online order"],
+      "grievance_officer_email": "dspg-ca@gov.in",
+      "email_kind": "role",
+      "officer_name": "Shri Prashant Dubey",
+      "officer_designation": "Director",
+      "officer_phone": "011-23384390",
+      "helpline": "1915",
+      "categories": [
+        {"id": "DOCA-ECOM", "name": "E-commerce order dispute", "hint": "Undelivered, wrong, or defective online order; refund refused."},
+        {"id": "DOCA-WARRANTY", "name": "Warranty / after-sales service", "hint": "Service refused within warranty."},
+        {"id": "DOCA-AD", "name": "Misleading advertisement", "hint": "False claims, dark patterns, hidden charges."}
+      ]
+    },
+    {
+      "id": "MOHUA",
+      "name": "Ministry of Housing and Urban Affairs",
+      "parent": "Ministry of Housing and Urban Affairs",
+      "keywords": ["municipal", "urban", "metro", "housing", "swachh", "cgh"],
+      "grievance_officer_email": "shankar.pc@nic.in",
+      "email_kind": "individual",
+      "officer_name": "Sh. Shankar Prasad Choudhary",
+      "officer_designation": "Deputy Secretary",
+      "officer_phone": "011-23783000",
+      "helpline": "",
+      "note": "Central urban schemes only. Almost every city-level complaint - potholes, garbage, water, street lights, property tax - belongs to a municipal portal, NOT here.",
+      "categories": [
+        {"id": "MOHUA-GEN", "name": "Urban services (central schemes)", "hint": "Central urban schemes only; city-level issues belong to a state or municipal portal."}
+      ]
+    },
+    {
+      "id": "DPPW",
+      "name": "Department of Pension and Pensioners' Welfare",
+      "parent": "Ministry of Personnel, Public Grievances and Pensions",
+      "keywords": ["pension", "pensioner", "life certificate", "jeevan pramaan", "family pension", "retirement", "gratuity"],
+      "grievance_officer_email": "sanjay.bharti84@gov.in",
+      "email_kind": "individual",
+      "officer_name": "Shri Sanjay Bharti",
+      "officer_designation": "Under Secretary (CPENGRAMS)",
+      "officer_phone": "011-24644632",
+      "helpline": "",
+      "note": "Pension grievances have their own system, CPENGRAMS (pensionersportal.gov.in), which is the more direct route.",
+      "categories": [
+        {"id": "DPPW-DELAY", "name": "Pension not credited", "hint": "Monthly pension stopped or delayed."},
+        {"id": "DPPW-FAMILY", "name": "Family pension sanction", "hint": "Family pension not sanctioned after member's death."},
+        {"id": "DPPW-LC", "name": "Life certificate / Jeevan Pramaan", "hint": "Digital life certificate not accepted or processed."}
+      ]
+    }
+  ],
+  "out_of_scope": {
+    "note": "CPGRAMS covers CENTRAL government. These belong elsewhere and the router must say so rather than misfile.",
+    "examples": [
+      "State police, local FIR, traffic challans -> state grievance portal",
+      "Municipal water, garbage, potholes, street lights -> city/municipal portal",
+      "State electricity boards -> state discom portal",
+      "Private company disputes with no central regulator -> consumer commission",
+      "Court matters, pending litigation -> not admissible as a grievance",
+      "RTI requests -> RTI Online portal, a different mechanism entirely"
+    ]
+  }
+}
