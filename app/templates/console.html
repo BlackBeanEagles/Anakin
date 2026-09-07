@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Console — Persist{% endblock %}
+{% block body %}
+
+<section class="hero">
+  {% include "_art.html" %}
+  <div class="eyebrow">Operator</div>
+  <h1>{% if pending %}{{ pending|length }} draft{{ '' if pending|length == 1 else 's' }} waiting on you.{% else %}Nothing waiting.{% endif %}</h1>
+  <p>
+    The agent drafts; you decide. Nothing on this page has been sent. Approving a portal
+    packet emails it to the citizen for the one credentialed step; approving an email
+    dispatches it{% if settings.dry_run %} — currently to <code>outbox/</code>, not the real world{% endif %}.
+  </p>
+
+  <div class="stats">
+    <div class="stat hot"><div class="n">{{ pending|length }}</div><div class="k">Awaiting approval</div></div>
+    <div class="stat"><div class="n">{{ stats.open }}</div><div class="k">Open cases</div></div>
+    <div class="stat good"><div class="n">{{ stats.resolved }}</div><div class="k">Resolved</div></div>
+    <div class="stat bad"><div class="n">{{ stats.unresolved }}</div><div class="k">Unresolved</div></div>
+    <div class="stat"><div class="n">{{ stats.actions_sent }}</div><div class="k">Actions sent</div></div>
+    <div class="stat"><div class="n">rung {{ stats.max_rung }}</div><div class="k">Deepest reached</div></div>
+  </div>
+
+  <div class="btn-row" style="margin-top:18px">
+    <form method="post" action="/console/tick">
+      <button class="sm ghost" type="submit">Run a tick now</button>
+    </form>
+    <span style="font-size:12.5px;color:var(--ink-4)">
+      Auto-ticks every {{ settings.tick_seconds }}s · time scale {{ settings.time_scale }}×
+      {% if settings.imap_enabled %} · inbox polling{% else %} · inbox off{% endif %}
+    </span>
+  </div>
+</section>
+
+<h2>Approval queue {% if pending %}<span class="count">{{ pending|length }}</span>{% endif %}</h2>
+
+{% if not pending %}
+  <div class="empty">
+    Nothing queued. The agent will draft the next action when a case comes due.
+  </div>
+{% else %}
+  <div class="gate-note">
+    <span aria-hidden="true">⏸</span>
+    <span>
+      Every item here is <strong>unsent</strong>. Read the draft before approving — this
+      goes out over a real person's name, and the agent can be wrong about tone, facts,
+      or which rung the case actually deserves.
+    </span>
+  </div>
+{% endif %}
+
+{% for a in pending %}
+<div class="queue-item r{{ a.rung }}">
+  <div class="queue-head">
+    <a href="/case/{{ a.case_id }}" style="font-family:var(--mono);font-size:13px">{{ a.case_id }}</a>
+    <span class="pill rung">rung {{ a.rung }}</span>
+    <span class="pill kind">{{ a.kind }}</span>
+    <span class="subj">{{ a.subject }}</span>
+  </div>
+  <div class="queue-to">
+    {{ a.channel }} → <span class="addr">{{ a.recipient or "the citizen" }}</span>
+    · on behalf of {{ a.citizen_name }}
+    {% if a.channel == 'email' and not a.recipient %}
+      <strong style="color:var(--bad-ink)"> · no address on file — cannot send</strong>
+    {% elif 'VERIFY-ME' in (a.recipient or '') %}
+      <strong style="color:var(--bad-ink)"> · placeholder address — fix taxonomy.json before sending</strong>
+    {% endif %}
+  </div>
+
+  <pre class="draft">{{ a.content }}</pre>
+
+  <div class="btn-row" style="margin-top:15px">
+    <form method="post" action="/console/approve/{{ a.id }}">
+      <button class="sm go" type="submit">Approve &amp; send</button>
+    </form>
+    <form method="post" action="/console/reject/{{ a.id }}">
+      <button class="sm danger" type="submit">Reject &amp; redraft</button>
+    </form>
+    <span style="font-size:12.5px;color:var(--ink-4)">
+      Rejecting redrafts the same rung — it does not escalate.
+    </span>
+  </div>
+</div>
+{% endfor %}
+
+<h2>All cases <span class="count">{{ cases|length }}</span></h2>
+{% if not cases %}
+  <div class="empty">No cases yet. <a href="/file">File one →</a></div>
+{% endif %}
+{% for c in cases %}
+  {% set facts = c.facts_json | fromjson %}
+  <a class="case-row r{{ c.rung }}" href="/case/{{ c.id }}" style="color:inherit">
+    <div class="case-id">{{ c.id }}</div>
+    <div class="case-main">
+      <div class="sum">{{ facts.one_line_summary if facts and facts.one_line_summary else (c.narrative_raw[:100] ~ "…") }}</div>
+      <div class="case-meta">
+        {{ c.citizen_name }} · {{ c.status.replace('_', ' ') }}
+        {% if not c.is_public %} · <em>private</em>{% endif %}
+        {% if c.cpgrams_reg_no %} · <span class="ref">{{ c.cpgrams_reg_no }}</span>{% endif %}
+      </div>
+    </div>
+    <div class="case-right">
+      {% if c.status == 'resolved' %}
+        <span class="pill resolved"><span class="dot"></span>Resolved</span>
+      {% elif c.status == 'closed_unresolved' %}
+        <span class="pill dead"><span class="dot"></span>Unresolved</span>
+      {% elif c.status in ('needs_info', 'awaiting_submission') %}
+        <span class="pill blocked"><span class="dot"></span>Waiting on citizen</span>
+      {% elif c.status == 'awaiting_approval' %}
+        <span class="pill blocked"><span class="dot"></span>Needs you</span>
+      {% else %}
+        <span class="pill open"><span class="dot"></span>Active</span>
+      {% endif %}
+      <div style="margin-top:6px"><span class="pill rung">rung {{ c.rung }}/5</span></div>
+    </div>
+  </a>
+{% endfor %}
+
+{% endblock %}
