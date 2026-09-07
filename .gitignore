@@ -7,3 +7,4 @@ __pycache__/
 venv/
 outbox/
 .DS_Store
+webcache/
