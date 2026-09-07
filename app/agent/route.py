@@ -58,13 +58,19 @@ SCHEMA = obj(
         "alternates": {
             "type": "array",
             "description": "Runner-up routings seriously considered.",
+            # ministry_name/category_name are here because models want to emit them
+            # anyway. Under strict schemas Groq rejects the whole tool call for an
+            # unexpected key, forcing a slow JSON-mode retry - cheaper to accept the
+            # fields than to fight for their absence.
             "items": obj(
                 {
                     "ministry_id": {"type": "string"},
+                    "ministry_name": {"type": "string"},
                     "category_id": {"type": "string"},
+                    "category_name": {"type": "string"},
                     "why_not": {"type": "string"},
                 },
-                ["ministry_id", "category_id", "why_not"],
+                ["ministry_id", "ministry_name", "category_id", "category_name", "why_not"],
             ),
         },
         "applicable_rule": {
