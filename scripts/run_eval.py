@@ -21,6 +21,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+# Line-buffer stdout. Piped or redirected, Python buffers in 8KB blocks, so a
+# five-minute eval shows nothing at all until it finishes - which looks hung.
+sys.stdout.reconfigure(line_buffering=True)
+
 from app.agent import extract_facts, route_case  # noqa: E402
 from app.agent.baseline import baseline_route  # noqa: E402
 from app.config import settings  # noqa: E402
