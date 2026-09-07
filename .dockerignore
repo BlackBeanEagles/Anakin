@@ -1,0 +1,13 @@
+.venv/
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.env
+*.db
+*.db-wal
+*.db-shm
+outbox/
+.git/
+.claude/
+README.md
