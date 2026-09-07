@@ -18,7 +18,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import db, inbox, ladder, mailer, whatsapp
+from . import db, inbox, ladder, mailer, watch, web, whatsapp
 from .config import ROOT, settings
 
 logging.basicConfig(
@@ -50,6 +50,22 @@ def _inbox_job() -> None:
         log.exception("inbox poll failed")
 
 
+def _directory_job() -> None:
+    try:
+        web.reset_tick_budget()
+        result = watch.refresh_officer_directory()
+        if not result["ok"]:
+            log.warning("officer directory unreachable: %s", result["reason"])
+        elif result["drift"]:
+            for d in result["drift"]:
+                log.warning("officer contact may be stale: %s (%s, %s)",
+                            d["ministry_id"], d["on_file"], d["email_kind"])
+        else:
+            log.info("officer directory checked - all contacts still listed")
+    except Exception:  # noqa: BLE001
+        log.exception("directory check failed")
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     db.init()
@@ -58,6 +74,12 @@ async def lifespan(app: FastAPI):
     if settings.imap_enabled:
         scheduler.add_job(_inbox_job, "interval", seconds=settings.imap_poll_seconds,
                           id="inbox", max_instances=1, coalesce=True)
+    if settings.web_reading_enabled:
+        # Six of our officer contacts belong to named individuals who rotate with the
+        # posting. Checking daily catches that drift before a grievance is sent to
+        # someone who left.
+        scheduler.add_job(_directory_job, "interval", hours=24,
+                          id="directory", max_instances=1, coalesce=True)
     scheduler.start()
 
     log.info("Persist up. provider=%s model=%s dry_run=%s time_scale=%s tick=%ss",
@@ -192,6 +214,7 @@ def case_page(request: Request, case_id: str, session: str | None = Cookie(None)
         "case": case,
         "facts": db.jload(case["facts_json"], {}),
         "routing": db.jload(case["routing_json"], {}),
+        "observed": db.jload(case["observed_json"], {}),
         "actions": db.case_actions(case_id),
         "events": db.case_events(case_id),
         "rung": ladder.rung(case["rung"]),
