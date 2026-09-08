@@ -29,6 +29,7 @@
   would have been:
 </p>
 
+<div class="tablewrap">
 <table>
   <tr><th>Site</th><th>Outcome</th><th>Why</th><th>Cost</th><th>What we do instead</th></tr>
   {% for b in builds %}
@@ -41,6 +42,7 @@
   </tr>
   {% endfor %}
 </table>
+</div>
 
 <div class="banner info">
   <strong>What the pgportal build actually did.</strong> Anakin's documentation prices a
@@ -58,6 +60,7 @@
 
 {% if forged %}
 <h2>Connectors in use</h2>
+<div class="tablewrap">
 <table>
   <tr><th>Connector</th><th>Site</th><th>Since</th><th>Useful</th></tr>
   {% for t in forged %}
@@ -69,9 +72,11 @@
   </tr>
   {% endfor %}
 </table>
+</div>
 {% endif %}
 
 <h2>Every call that could have cost something</h2>
+<div class="tablewrap">
 <table>
   <tr><th>When</th><th>Endpoint</th><th>Detail</th><th>Credits</th></tr>
   {% for c in ledger %}
@@ -85,6 +90,7 @@
   <tr><td colspan="4">Nothing metered yet.</td></tr>
   {% endfor %}
 </table>
+</div>
 
 <p class="muted">
   Free by design: the catalog listing, action discovery and Zero Touch runs are all

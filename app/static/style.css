@@ -325,8 +325,14 @@ pre.draft.reply { background: var(--card); border-left-color: var(--rung-2); }
            font-weight: 600; color: var(--ink-4); display: flex; align-items: center; gap: 9px; }
 .ba-col.after .ba-head { background: var(--wash-indigo); color: var(--rung-ink);
                          border-bottom-color: #dee2f4; }
+/* No 380px cap here. This panel exists to show what the narrative turned into, and
+   the filed grievance runs past 380px every time - so the cap silently hid the last
+   third of it behind an inner scrollbar with no affordance, which on a screen
+   recording reads as the letter being cut off mid-sentence. The generous cap below
+   is a guard against a pathological draft, not a layout choice; nothing normal
+   reaches it. */
 .ba-body { padding: 17px 19px; font-size: 13.5px; line-height: 1.66; color: var(--ink-2);
-           flex: 1; max-height: 380px; overflow-y: auto; white-space: pre-wrap; }
+           flex: 1; max-height: 1400px; overflow-y: auto; white-space: pre-wrap; }
 .ba-col.after .ba-body { font-family: var(--mono); font-size: 12.5px; line-height: 1.7; }
 .ba-foot { padding: 10px 17px; border-top: 1px solid var(--edge-soft);
            font-size: 11.5px; color: var(--ink-4); display: flex; gap: 14px; flex-wrap: wrap; }
@@ -415,3 +421,10 @@ footer.foot { border-top: 1px solid var(--edge); margin-top: 56px; padding-top: 
   background: none; border: 0; box-shadow: none; padding: 0; margin: 0;
 }
 .og .stat { font-size: 40px; font-weight: 600; color: #23211d; line-height: 1.1; }
+
+/* Wide content scrolls inside its own box rather than widening the page.
+   Without this the credit ledger's detail column made the whole of /toolbox
+   757px wide in a 375px viewport - the entire page slid sideways on a phone,
+   which is where a judge following a link is most likely to open it. */
+.tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.tablewrap table { min-width: 460px; }

@@ -16,7 +16,12 @@
     <div class="stat"><div class="n">{{ stats.total }}</div><div class="k">Cases taken</div></div>
     <div class="stat"><div class="n">{{ stats.filed }}</div><div class="k">Filed</div></div>
     <div class="stat good"><div class="n">{{ stats.resolved }}</div><div class="k">Resolved</div></div>
-    <div class="stat"><div class="n">{{ stats.win_rate }}%</div><div class="k">Win rate</div></div>
+    {# A win rate needs resolved cases to be a rate at all. Printing "0.0%" beside
+       three open cases states a failure that has not happened yet - the scoreboard
+       already suppresses per-department rates under three replies for the same
+       reason, and the dashboard should not contradict it. #}
+    <div class="stat"><div class="n">{% if stats.resolved %}{{ stats.win_rate }}%{% else %}&mdash;{% endif %}</div>
+      <div class="k">Win rate{% if not stats.resolved %} · none closed yet{% endif %}</div></div>
     <div class="stat"><div class="n">{{ stats.actions_sent }}</div><div class="k">Actions taken</div></div>
     <div class="stat good"><div class="n">₹{{ "{:,.0f}".format(stats.recovered) }}</div><div class="k">Recovered</div></div>
   </div>
