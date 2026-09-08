@@ -63,7 +63,7 @@ run in minutes while testing.
 
 ---
 
-## Reading the web, and building the tool that was missing
+## Reading the web, and the tool that could not be built
 
 Two of the pages this depends on are hard to read on purpose. The CPGRAMS status
 screen is session- and captcha-gated; India Post tracking is a JS-rendered ASP.NET
@@ -80,46 +80,71 @@ So reads climb a ladder of their own, cheapest rung first:
 | Anakin proxy | 1 credit | the same request through residential routing |
 | headless browser | 1 credit | for pages that need JavaScript to exist at all |
 
-The top rung is the interesting one. [Anakin](https://anakin.io)'s Wire catalog holds
-roughly 5,000 pre-built actions across 991 sites. A connector returns *fields* —
-status, ministry, a dated history — so nothing has to be interpreted and nothing can
-be misinterpreted, and read-only actions run free through Zero Touch.
+### The gap is real, and free to prove
 
-**Neither site Persist needs is in that catalog.** Ask it how to check a government
-grievance and it offers box office charts and FAA airport restrictions. India Post is
-listed, but its six actions sell commemorative stamps and Gangajal — none of them
-track a parcel. See for yourself, free:
+[Anakin](https://anakin.io)'s Wire catalog holds roughly 5,000 pre-built actions
+across 991 sites. **Neither site Persist needs is in it.** Ask the catalog how to
+check a government grievance and it offers box office charts and FAA airport
+restrictions. India Post is listed, but its six actions sell commemorative stamps and
+Gangajal — none of them track a parcel.
 
 ```bash
-python scripts/forge.py          # the gap report. Spends nothing.
+python scripts/forge.py          # the gap report. Costs nothing, keyless, reproducible.
 ```
 
-Which is why `forge.py` can also build one:
+Discovery is free throughout — `/wire/resolve`, the catalog listing and per-site
+action lists are all public — so proving the gap costs nothing at all. `catalog.py`
+reranks on top of `/resolve`, which matches on text rather than meaning: ask it about
+a government portal and it returns a sports shop, because both descriptions contain
+the word "portal".
 
-```bash
-python scripts/forge.py --build cpgrams
-```
+### Filling the gap did not work
 
-It writes a specification, Anakin's builder generates a scraper, tests it against the
-live site, and publishes it. Persist then reads pgportal.gov.in through a connector
-that did not exist an hour earlier — and so can everyone else, because the build is
-public.
+Anakin can generate a connector for a site that has none: describe it in English,
+their builder writes a scraper, tests it against the live site, and publishes it.
+That was meant to be the centrepiece of this project. **It was tried, on a real
+build, and it failed** — so here is the measurement instead of the claim.
 
-**Why it is a command and not a ladder step.** A build blocks for minutes while
-`ladder.tick()` runs every 20 seconds and sweeps the whole queue, so forging inside it
-would freeze every case behind one grievance. It also costs 25 of 300 credits, which
-per case is bankruptcy by the third one. A connector is built **once** and inherited
-free by every case after it.
+Build `c862cdc1-cba6-4737-895f-ed44fdb0212f`, `pgportal.gov.in`, 2026-09-08:
 
-**When it fails**, which it may — government portals can be out of scope for their
-builder — the failure is recorded, explained, and *measured*: the site is re-read
-uncached through the ordinary chain and the answer written next to the failure, so
-"does this still work without the connector?" is a fact rather than a hope. Failed
-attempts are published on `/toolbox` alongside the successes.
+| | Documented | Actual |
+|---|---|---|
+| Cost | 25 credits | **200 credits** — two thirds of the free tier |
+| On success | action published | catalog entry created, **`action_count: 0`** |
+| On failure | refunded | not refunded — upstream calls this success |
+
+The catalog now contains "CPGRAMS PG Portal", category `government`, status `active`,
+with an empty action list. There is nothing to call. `/wire/resolve` still answers
+CPGRAMS queries with box office charts.
+
+**What that cost, and what it bought.** 200 credits, and a negative result worth
+having: *the build endpoint reports success without delivering a tool, and charges
+eight times its published price to do it.* Anyone planning to build on that endpoint
+should know before they spend, which is why it is written down here rather than
+quietly dropped.
+
+### Which is what the fallback is for
+
+None of this stopped the project, because it was designed on the assumption that it
+might. A build that does not deliver is recorded, explained, and **measured**: the
+site is re-read uncached through the ordinary chain and the answer written next to
+the failure, so *"does this still work without the connector?"* is a fact rather than
+a hope. `NO_ACTION_PRODUCED` is now a first-class outcome alongside
+`BLOCKED_WEBSITE` and `BUILD_FAILED`, and success is not taken at its word — a build
+that publishes no action is treated as a failure whatever its status field says.
+
+`app/wire.py` is the path a connector would have been used through. It is finished
+and tested against a mocked action, because the parameter binder had to be written
+blind: Wire generates actions from English, so whether an identifier arrives as
+`registration_number`, `reg_no` or `grievance_id` is unknowable in advance. It sits
+unused, correctly, because `find_tool` finds nothing — which is the honest state of
+the toolbox.
 
 Credits are metered before each call against two ceilings — the global budget and one
-case's share of it — and calls are refused, never silently degraded. The whole ledger
-is public at `/toolbox`.
+case's share of it — and calls are refused, never silently degraded. The published
+price is treated as an estimate and the ledger uses what the response actually says,
+because on the one build that mattered those differed by 8x. The whole ledger,
+including the failure, is public at `/toolbox`.
 
 ## Quick start
 
@@ -471,6 +496,10 @@ Report the failures too. The losses are what make the wins believable.
 - **Phone rail (rung 4)** generates a call script; a human places the call and logs the
   outcome. Wiring real telephony (Exotel/Plivo — Twilio has KYC friction for Indian
   outbound) is the day-5 job. You need *one* good recorded call for the video.
+- **A working Wire connector for CPGRAMS.** Attempted and failed — the build charged
+  200 credits, reported success, and published zero actions. `app/wire.py` is the
+  finished path a connector would be used through; it sits unused because there is no
+  connector to use. See "Filling the gap did not work" above.
 - **Real portal automation.** Deliberately absent — see the credential boundary above.
 - **Attachments.** Citizens have receipts and screenshots; intake is text-only.
 - **Low-confidence gating.** The router reports confidence and the UI flags anything
@@ -487,7 +516,7 @@ Report the failures too. The losses are what make the wins believable.
 | `/` | the live ledger — every case, every action, wins and losses |
 | `/scoreboard` | **which departments actually answer** — deflection rate per ministry |
 | `/case/<id>` | one case, including the before/after |
-| `/toolbox` | **the receipts** — every connector used, every credit spent, every build attempt including the failed ones |
+| `/toolbox` | **the receipts** — every credit spent, and the 200-credit build that reported success and delivered nothing |
 | `/api/ledger` | the whole thing as JSON, so the win rate is auditable, not just claimed |
 
 **The before/after** on each case page is the most legible thing in the product: the
