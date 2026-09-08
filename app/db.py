@@ -365,3 +365,41 @@ def tools(origin: str = "") -> list[dict]:
                 "SELECT * FROM tools ORDER BY origin DESC, uses DESC").fetchall()
     return [dict(r) for r in rows]
 
+
+# ---------------------------------------------------------------- builds
+
+def record_build(build_id: str, domain: str, goal: str, *, status: str,
+                 code: str = "", error: str = "", credits: int = 0) -> None:
+    """Log a forge attempt the moment it is made, not when it resolves.
+
+    Written up front so a crash, a Ctrl-C, or a fifteen-minute wait that nobody sits
+    through still leaves a record of what was asked for and what it cost.
+    """
+    with connect() as conn:
+        conn.execute(
+            """INSERT INTO builds (id, created_at, domain, goal, status, code,
+                                   error, credits)
+               VALUES (?,?,?,?,?,?,?,?)
+               ON CONFLICT(id) DO UPDATE SET
+                   status=excluded.status, code=excluded.code, error=excluded.error""",
+            (build_id, now(), domain, goal, status, code or None, error or None, credits))
+
+
+def finish_build(build_id: str, *, status: str, action_id: str = "", error: str = "",
+                 code: str = "", refunded: bool = False, fallback: str = "") -> None:
+    with connect() as conn:
+        conn.execute(
+            """UPDATE builds SET finished_at=?, status=?, action_id=?, error=?,
+                                 code=COALESCE(NULLIF(?, ''), code),
+                                 refunded=?, fallback=?
+               WHERE id=?""",
+            (now(), status, action_id or None, error or None, code, int(refunded),
+             fallback or None, build_id))
+
+
+def builds(limit: int = 50) -> list[dict]:
+    with connect() as conn:
+        rows = conn.execute(
+            "SELECT * FROM builds ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    return [dict(r) for r in rows]
+

@@ -46,7 +46,18 @@ BUILD_COST = 25                  # published price; refunded automatically on fa
 
 
 class AnakinError(RuntimeError):
-    """A call did not come back usable. Never fatal — callers fall back."""
+    """A call did not come back usable. Never fatal — callers fall back.
+
+    `code` carries the machine-readable reason so callers can branch on it rather
+    than pattern-matching English. That matters most for builds: BLOCKED_WEBSITE
+    means stop asking, BUILD_LIMIT_REACHED means come back in a few minutes, and
+    ACTION_EXISTS means go and use what is already there. Treating all three as
+    "it broke" is how a demo dies on the wrong one.
+    """
+
+    def __init__(self, message: str, code: str = "ERROR"):
+        super().__init__(message)
+        self.code = code
 
 
 # ------------------------------------------------------------------ availability
@@ -361,9 +372,11 @@ def build_request(website_url: str, goal: str, *, visibility: str = "public",
     becomes readable by every other Anakin user, not just this account.
     """
     if not configured():
-        raise AnakinError("no ANAKIN_API_KEY configured")
+        raise AnakinError("no ANAKIN_API_KEY configured", "NO_KEY")
     if not _afford(BUILD_COST):
-        raise AnakinError(f"budget exhausted: {spent()}/{settings.anakin_credit_budget} used")
+        raise AnakinError(
+            f"budget exhausted: {spent()}/{settings.anakin_credit_budget} used",
+            "NO_BUDGET")
 
     payload = {"website_url": website_url, "goal": goal, "visibility": visibility}
     if force:
@@ -372,16 +385,22 @@ def build_request(website_url: str, goal: str, *, visibility: str = "public",
         r = httpx.post(_url("/v1/wire/build-request"), headers=_headers(),
                        json=payload, timeout=60.0)
     except httpx.HTTPError as exc:
-        raise AnakinError(f"transport error: {exc}") from exc
+        raise AnakinError(f"transport error: {exc}", "TRANSPORT") from exc
 
     if r.status_code == 409:
         # Something similar already exists. Not a failure — it means we should be
         # using the existing action rather than paying to duplicate it.
-        raise AnakinError(f"ACTION_EXISTS: {r.text[:400]}")
+        raise AnakinError(f"ACTION_EXISTS: {r.text[:400]}", "ACTION_EXISTS")
     if r.status_code == 429:
-        raise AnakinError("BUILD_LIMIT_REACHED: three builds already pending")
+        raise AnakinError("three builds already pending", "BUILD_LIMIT_REACHED")
     if r.status_code >= 400:
-        raise AnakinError(f"HTTP {r.status_code}: {r.text[:400]}")
+        # The upstream body names the reason; BLOCKED_WEBSITE is the one that
+        # decides whether a government portal is buildable at all, so it is lifted
+        # out rather than buried in an HTTP status.
+        body = r.text[:400]
+        code = "BLOCKED_WEBSITE" if "BLOCKED_WEBSITE" in body.upper() else (
+            "NO_BUDGET" if r.status_code == 402 else f"HTTP_{r.status_code}")
+        raise AnakinError(f"HTTP {r.status_code}: {body}", code)
 
     br = (r.json() or {}).get("build_request") or {}
     charged = int(br.get("credits_charged") or BUILD_COST)

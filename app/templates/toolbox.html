@@ -45,6 +45,27 @@
 </div>
 {% endif %}
 
+{% if builds %}
+<h2>Every attempt, including the ones that failed</h2>
+<p>
+  A build that does not land is still evidence — about what this approach can reach and
+  what it cannot. Failures are refunded, and recorded here with what reading the site
+  fell back to, so the answer to "does it still work without the connector?" is a fact
+  rather than a hope.
+</p>
+<table>
+  <tr><th>Site</th><th>Outcome</th><th>Why</th><th>Fallback</th></tr>
+  {% for b in builds %}
+  <tr>
+    <td>{{ b.domain }}</td>
+    <td>{{ b.status }}{% if b.refunded %} (refunded){% endif %}</td>
+    <td>{{ b.code or '—' }}</td>
+    <td>{{ b.fallback or '—' }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% endif %}
+
 <h2>Every call that could have cost something</h2>
 <table>
   <tr><th>When</th><th>Endpoint</th><th>Detail</th><th>Credits</th></tr>

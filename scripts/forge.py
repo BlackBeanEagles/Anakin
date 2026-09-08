@@ -28,7 +28,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from app import anakin, catalog, db  # noqa: E402
+from app import anakin, catalog, db, fallback  # noqa: E402
 from app.config import settings  # noqa: E402
 
 # The two reads Persist depends on, and which nothing in the catalog serves. Both
@@ -146,33 +146,79 @@ def build(key: str) -> int:
         br = anakin.build_request(gap["url"], gap["goal"], visibility="public",
                                   force=forcing)
     except anakin.AnakinError as exc:
-        print(f"\n  refused: {exc}")
-        if "BLOCKED_WEBSITE" in str(exc):
-            print("  Government portals are out of scope for their builder. The gap")
-            print("  detection still stands; file through Browser Sessions instead.")
-        return 1
+        # Refused before anything was charged - no build id exists yet, so the
+        # attempt is recorded under a local one rather than going unrecorded.
+        return _failed(f"local-{db.now()[:19]}-{key}", gap, exc.code, str(exc),
+                       refunded=False)
 
     print(f"\n  submitted {br.get('id')} — status {br.get('status')}, "
           f"{br.get('credits_charged')} credits held")
     print("  waiting (up to 15 minutes; safe to Ctrl-C and check --status later)")
 
+    # Recorded before the wait, not after: a Ctrl-C or a crash during those fifteen
+    # minutes must still leave a trace of what was asked for and what it cost.
+    db.record_build(br["id"], gap["domain"], gap["goal"], status="pending",
+                    credits=int(br.get("credits_charged") or anakin.BUILD_COST))
+
     done = anakin.await_build(br["id"])
     if done is None:
-        print("\n  still pending. Not a failure - builds are async with no published")
-        print("  SLA. Check later with: python scripts/forge.py --status")
-        return 0
+        return _failed(br["id"], gap, "TIMEOUT",
+                       "still building when we stopped waiting", refunded=False)
 
     if (done.get("status") or "").lower() != "success":
-        print(f"\n  build failed: {done.get('error_type', '')} {done.get('error', '')}")
-        print("  25 credits refunded automatically.")
-        return 1
+        return _failed(br["id"], gap, "BUILD_FAILED",
+                       f"{done.get('error_type', '')} {done.get('error', '')}".strip(),
+                       refunded=True)
 
     action_id = done.get("action_id") or ""
     db.remember_tool(action_id, origin="built", domain=gap["domain"],
-                     build_id=br.get("id") or "", schema=done)
+                     build_id=br["id"], schema=done)
+    db.finish_build(br["id"], status="success", action_id=action_id)
     print(f"\n  BUILT: {action_id}")
-    print(f"  Live in the public catalog. Every case from here on uses it for free.")
+    print("  Live in the public catalog. Every case from here on uses it for free.")
     return 0
+
+
+def _failed(build_id: str, gap: dict, code: str, error: str, *,
+            refunded: bool) -> int:
+    """Record a failed forge, then prove the project survives it.
+
+    The point is not to apologise gracefully. A build that cannot happen only
+    matters if it stops Persist reading the site, so the honest move is to go and
+    check - right now, uncached - whether the site is still reachable by the
+    ordinary chain, and print the answer either way.
+
+    A dead end that has been measured is a finding. An unmeasured one is a broken
+    demo waiting for the worst possible moment.
+    """
+    meaning, retryable = fallback.explain(code)
+    print(f"\n  build did not land — {code}")
+    if error:
+        print(f"  {error}")
+    print(f"  {meaning}")
+    if refunded:
+        print(f"  {anakin.BUILD_COST} credits refunded automatically.")
+    print(f"  {'Worth retrying.' if retryable else 'Retrying will not help.'}")
+
+    print("\n  checking whether the site is readable without a connector...")
+    probe = fallback.probe(gap["url"])
+    line = fallback.summarise(probe)
+    print(f"  {line}")
+
+    # TIMEOUT is not failure - the build may still land - so it stays pending.
+    state = "pending" if code == "TIMEOUT" else "failed"
+    db.record_build(build_id, gap["domain"], gap["goal"], status=state,
+                    code=code, error=error)
+    db.finish_build(build_id, status=state, error=error, code=code,
+                    refunded=refunded, fallback=line)
+
+    if probe["readable"]:
+        print("\n  Persist keeps working. The connector would have been better -")
+        print("  its absence costs evidence quality, not the case.")
+        return 0
+    print("\n  Not readable by any route right now. The ladder falls back to its")
+    print("  timer, which is the behaviour it had before Wire was involved at all.")
+    return 1
 
 
 def main(argv: list[str]) -> int:

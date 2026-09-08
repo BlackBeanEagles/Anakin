@@ -94,3 +94,25 @@ CREATE TABLE IF NOT EXISTS tools (
     uses          INTEGER NOT NULL DEFAULT 0,
     wins          INTEGER NOT NULL DEFAULT 0
 );
+
+-- Every attempt to forge a connector, successful or not.
+--
+-- A build that fails is refunded upstream, which makes it tempting to forget. That
+-- would be the wrong instinct: a documented failure is evidence about what this
+-- approach can and cannot do, and "we asked, here is exactly what came back" is a
+-- more honest artefact than silence. It is also what stops a second run paying 25
+-- credits to rediscover that a domain is blocked.
+CREATE TABLE IF NOT EXISTS builds (
+    id            TEXT PRIMARY KEY,       -- upstream build_request id, or local-*
+    created_at    TEXT NOT NULL,
+    finished_at   TEXT,
+    domain        TEXT NOT NULL,
+    goal          TEXT NOT NULL,
+    status        TEXT NOT NULL,          -- pending | success | failed | refused
+    code          TEXT,                   -- BLOCKED_WEBSITE, ACTION_EXISTS, ...
+    error         TEXT,
+    action_id     TEXT,
+    credits       INTEGER NOT NULL DEFAULT 0,
+    refunded      INTEGER NOT NULL DEFAULT 0,
+    fallback      TEXT                    -- what reading the site fell back to
+);

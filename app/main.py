@@ -275,6 +275,7 @@ def toolbox(request: Request):
     return templates.TemplateResponse(request, "toolbox.html", {
         "forged": db.tools("built"),
         "found": [t for t in db.tools() if t["origin"] != "built"],
+        "builds": db.builds(20),
         "ledger": anakin.ledger(60),
         "spent": anakin.spent(),
         "budget": settings.anakin_credit_budget,
