@@ -100,6 +100,9 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Persist", lifespan=lifespan)
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
 templates = Jinja2Templates(directory=str(ROOT / "app" / "templates"))
+# Every template needs the absolute base URL for its social card, and threading it
+# through each handler would guarantee one gets missed.
+templates.env.globals["base_url"] = settings.public_base_url.rstrip("/")
 templates.env.globals["settings"] = settings
 templates.env.globals["RUNGS"] = ladder.RUNGS
 templates.env.filters["fromjson"] = lambda raw: db.jload(raw, {})
@@ -260,6 +263,42 @@ def _sendable(address: str | None) -> bool:
     if not a or "@" not in a or a.startswith("@") or a.endswith("@"):
         return False
     return not any(bad in a.upper() for bad in ("VERIFY-ME", "EXAMPLE.COM", "CHANGEME", "TODO"))
+
+
+@app.get("/share", response_class=HTMLResponse)
+def share(request: Request, session: str | None = Cookie(None)):
+    """Sourcing kit: the link, a QR for it, and copy that is honest about what this is.
+
+    Behind the console password because it is a tool for whoever is running this, not
+    a page for a citizen. The QR it renders is public in the only sense that matters -
+    it points at /file, which anyone can open.
+    """
+    if not _authed(session):
+        return RedirectResponse("/console", status_code=303)
+    from . import share as kit
+
+    url = f"{settings.public_base_url.rstrip('/')}/file"
+    return templates.TemplateResponse(request, "share.html", {
+        "url": url,
+        "qr": kit.qr_svg(url),
+        "channels": [(name, body.format(url=url), why)
+                     for name, body, why in kit.CHANNELS],
+        "local": "127.0.0.1" in url or "localhost" in url,
+    })
+
+
+@app.get("/og-card", response_class=HTMLResponse)
+def og_card(request: Request):
+    """The social preview image, as a page to screenshot at 1200x630.
+
+    Rendering it as HTML rather than shipping a PNG means it restyles with the rest
+    of the site instead of quietly going out of date, and needs no image library.
+    """
+    from . import share as kit
+    return templates.TemplateResponse(request, "og_card.html", {
+        "w": kit.OG_WIDTH, "h": kit.OG_HEIGHT,
+        "board": db.scoreboard(),
+    })
 
 
 @app.get("/toolbox", response_class=HTMLResponse)

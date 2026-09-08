@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Sourcing kit — get the link in front of someone{% endblock %}
+{% block body %}
+
+<section class="hero">
+  {% include "_art.html" %}
+  <div class="eyebrow">Operator tool</div>
+  <h1>Cases are the bottleneck. Not code.</h1>
+  <p>
+    An escalation agent with nothing to escalate is a demo. The thing nobody can copy on
+    the last day is a week of real outcomes — so this page exists to get the intake link
+    in front of someone who actually has a complaint stuck.
+  </p>
+</section>
+
+{% if local %}
+<div class="banner warn">
+  <strong>This link only works on your machine.</strong> <code>{{ url }}</code> is
+  localhost — nobody you send it to can open it. Deploy first (see <code>DEPLOY.md</code>)
+  and set <code>PUBLIC_BASE_URL</code>, or the QR and every message below point nowhere.
+</div>
+{% endif %}
+
+<h2>The link</h2>
+<div class="qr-row">
+  <div class="qr">{{ qr | safe }}</div>
+  <div>
+    <p class="big-link"><code>{{ url }}</code></p>
+    <p class="muted">
+      The QR is SVG, so it stays sharp printed on a noticeboard. Point it at a society
+      gate, a college board, a local shop — somewhere people who are already annoyed
+      will see it.
+    </p>
+  </div>
+</div>
+
+<h2>Where to put it</h2>
+<p>
+  Ordered by how likely a real, stuck case is sitting there right now — not by audience
+  size. Ten forwards in a family group beats a thousand impressions.
+</p>
+
+{% for name, body, why in channels %}
+<div class="channel">
+  <h3>{{ name }}</h3>
+  <p class="muted">{{ why }}</p>
+  <textarea readonly rows="{{ 6 if body|length < 400 else 16 }}">{{ body }}</textarea>
+</div>
+{% endfor %}
+
+<h2>Before you send any of it</h2>
+<ul>
+  <li><strong>Say it's experimental.</strong> Someone who feels misled after handing over
+    a real complaint is a person this harmed, not a data point.</li>
+  <li><strong>Never ask for a portal password.</strong> Not in DMs, not "to make it
+    easier". The boundary is the product.</li>
+  <li><strong>Answer every reply.</strong> A stranger trusting you with a stuck pension
+    is doing you a favour.</li>
+  <li><strong>Turn off <code>DRY_RUN</code> before you promise anyone anything</strong> —
+    otherwise the letters go to <code>outbox/</code> and nothing is actually filed.</li>
+</ul>
+
+<h2>The social preview image</h2>
+<p>
+  Open <a href="/og-card">/og-card</a>, screenshot it at 1200×630, and save it as
+  <code>app/static/og.png</code>. Without it, links posted to WhatsApp and Twitter render
+  as bare text and get scrolled past.
+</p>
+
+{% endblock %}

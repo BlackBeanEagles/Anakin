@@ -5,6 +5,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light">
   <title>{% block title %}Persist{% endblock %}</title>
+
+  {# A link with no preview card gets scrolled past. Sourcing happens in WhatsApp
+     groups and on Twitter, so the card is not decoration - it is the difference
+     between a link someone taps and a link someone ignores. #}
+  <meta property="og:site_name" content="Persist">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{% block og_title %}Persist — it keeps asking so you don't have to{% endblock %}">
+  <meta property="og:description" content="{% block og_desc %}Free. An agent files your government grievance, watches it, and escalates every time the deadline passes. Every case and every outcome is public.{% endblock %}">
+  <meta property="og:url" content="{{ base_url }}{{ request.url.path }}">
+  <meta property="og:image" content="{{ base_url }}/static/og.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="{{ self.og_title() }}">
+  <meta name="twitter:description" content="{{ self.og_desc() }}">
+  <meta name="twitter:image" content="{{ base_url }}/static/og.png">
   <link rel="stylesheet" href="/static/style.css">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><circle cx='16' cy='16' r='13' fill='none' stroke='%23c0392b' stroke-width='3'/><circle cx='16' cy='16' r='5' fill='%232b3470'/></svg>">
 </head>

@@ -1,0 +1,33 @@
+<!doctype html>
+<meta charset="utf-8">
+<title>OG card — screenshot at {{ w }}×{{ h }}</title>
+<link rel="stylesheet" href="/static/style.css">
+<style>body{margin:0;background:#8a8a8a;display:flex;align-items:center;justify-content:center;min-height:100vh}</style>
+
+<div class="og">
+  <div>
+    <div class="kicker">Persist</div>
+    <h1>It keeps asking so you don't have to.</h1>
+    <p>
+      Files your government grievance, watches it, and escalates every time a deadline
+      passes. Free. Every case and every outcome published.
+    </p>
+  </div>
+  {# Numbers only once they flatter. A card announcing "0 cases taken" argues
+     against clicking it, and this image's whole job is to be clicked. #}
+  <div class="foot">
+    {% if board.total_cases %}
+    <div>
+      <div class="stat">{{ board.total_cases }}</div>
+      cases taken
+    </div>
+    {% endif %}
+    {% if board.overall_deflection_rate is not none %}
+    <div>
+      <div class="stat">{{ board.overall_deflection_rate }}%</div>
+      of replies are non-answers
+    </div>
+    {% endif %}
+    <div style="text-align:right;margin-left:auto">pgportal.gov.in<br>escalation, automated</div>
+  </div>
+</div>

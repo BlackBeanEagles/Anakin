@@ -509,6 +509,22 @@ Report the failures too. The losses are what make the wins believable.
   so two workers would double-tick cases. Keep it at one worker.
 - **No CSRF tokens** on console forms (see Safety above).
 
+## Sourcing, and the video
+
+Cases are the bottleneck, not code — an escalation agent with nothing to escalate is a
+demo. `/share` (behind the console password) is the sourcing kit: the intake link, a
+printable QR for it, and outreach copy for each channel ordered by how likely a real
+stuck case is sitting there. The copy states up front that this is experimental, free,
+publishes anonymously, and never asks for a portal password, because a case sourced by
+overpromising is worse than no case.
+
+`/og-card` renders the social preview at 1200x630 — screenshot it to
+`app/static/og.png`. Without it, links posted to WhatsApp and Twitter render as bare
+text and get scrolled past, which is most of where sourcing actually happens.
+
+`VIDEO.md` is the shot list, including the checklist of things that must be true
+before recording.
+
 ## The four public surfaces
 
 | Route | What it's for |
