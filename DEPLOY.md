@@ -18,6 +18,21 @@ This rules out **Render's free tier** (sleeps after 15 min) and **Koyeb free**
 disappears on the next deploy — destroying the accumulated evidence that is the entire
 moat.
 
+## Before you start
+
+`.env.production` in the repo root already holds every variable filled in with real
+values - keys, a generated console password, the correct `TIME_SCALE`. It is
+gitignored, so it never leaves your machine. Copy-paste it into whichever host you
+pick and change only `PUBLIC_BASE_URL`.
+
+Checked 2026-09-09 against production settings: `python scripts/doctor.py` reports
+**all clear** with a live Groq round trip and the officer directory verified. The only
+outstanding warning is the unverified category names, which needs one manual filing.
+
+**Railway is no longer usable on the free path** - the trial credit expired, and the
+CLI now refuses to create a project without a paid plan. Northflank below is the
+remaining genuinely-free option.
+
 ## Recommended: Northflank Sandbox (free)
 
 The one genuinely free tier left that is **always-on with no sleeping**, and supports
@@ -115,7 +130,7 @@ on a public URL.
 | Host | Free? | Sleeps? | Volume | Notes |
 |---|---|---|---|---|
 | **Northflank Sandbox** | yes | **no** | yes | recommended |
-| Railway | $5 trial credit | no | yes | credit likely covers a hackathon week |
+| Railway | **no - trial expired** | no | yes | CLI refuses `init` without a paid plan (checked 2026-09-09) |
 | Oracle Cloud Always Free | yes, forever | no | yes | 2 OCPU / 12 GB ARM as of Jun 2026 (halved); real VPS, capacity varies by region, most setup work |
 | Render free | yes | **yes — fatal** | no | do not use |
 | Fly.io | no | no | yes | free tier ended; 7-day trial only |
