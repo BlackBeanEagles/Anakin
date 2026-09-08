@@ -43,6 +43,12 @@ MEANING = {
     "BUILD_FAILED": (
         "The builder generated a scraper but it did not pass its own test against "
         "the live site. Credits are refunded automatically.", True),
+    "NO_ACTION_PRODUCED": (
+        "The build reported success and created the catalog entry, but published "
+        "zero actions - there is nothing to call. Observed on pgportal.gov.in, "
+        "2026-09-08: 200 credits charged, action_count 0, and no refund because "
+        "upstream does not consider this a failure. Treat a 'successful' build as "
+        "unproven until an action_id actually exists.", False),
     "TIMEOUT": (
         "Still building when we stopped waiting. Not a failure — check --status "
         "later; builds are asynchronous with no published SLA.", True),

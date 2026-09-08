@@ -343,7 +343,7 @@ def remember_tool(action_id: str, *, origin: str, catalog: str = "", domain: str
                VALUES (?,?,?,?,?,?,?,?,?)
                ON CONFLICT(action_id) DO NOTHING""",
             (action_id, now(), catalog or None, domain or None, origin, credits,
-             jdump(schema) if schema is not None else None, build_id or None,
+             json.dumps(schema, ensure_ascii=False, default=str) if schema is not None else None, build_id or None,
              funded_by or None))
 
 

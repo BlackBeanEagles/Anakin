@@ -32,6 +32,7 @@ same reason the case ledger is: a number you can audit is worth more than a clai
 """
 import json
 import logging
+import os
 import sqlite3
 import time
 
@@ -43,7 +44,16 @@ log = logging.getLogger("persist.anakin")
 
 TIMEOUT_SECONDS = 120.0          # /scrape holds the connection open up to ~90s
 BUILD_POLL_SECONDS = 15.0
-BUILD_COST = 25                  # published price; refunded automatically on failure
+# The documented price is 25. The observed price, on a real build submitted
+# 2026-09-08 against pgportal.gov.in, is 200 - eight times the published figure and
+# two thirds of the entire free tier in a single call. Their docs say "currently 25",
+# which is apparently not a promise.
+#
+# So this constant is only ever a pre-flight estimate. Everything that touches the
+# ledger uses `credits_charged` from the response, which is the number that is
+# actually true. Assuming the constant was true is how a refund silently returned
+# an eighth of what was taken.
+BUILD_COST = int(os.getenv("ANAKIN_BUILD_COST", "200") or 200)
 
 
 class AnakinError(RuntimeError):
@@ -465,7 +475,11 @@ def await_build(build_id: str, *, timeout_seconds: float = 900.0) -> dict | None
             state = (br.get("status") or "").lower()
             if state in {"success", "failed"}:
                 if state == "failed":
-                    _meter("build-request", -BUILD_COST,
+                    # Refund what was actually taken, not what we guessed it would
+                    # be. The upstream record carries the real figure; falling back
+                    # to the estimate would leave the ledger permanently short.
+                    charged = int(br.get("credits_charged") or BUILD_COST)
+                    _meter("build-request", -charged,
                            f"refund — build {build_id} failed: "
                            f"{str(br.get('error') or '')[:200]}", ok=False)
                 return br

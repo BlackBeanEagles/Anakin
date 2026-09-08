@@ -170,7 +170,20 @@ def build(key: str) -> int:
                        f"{done.get('error_type', '')} {done.get('error', '')}".strip(),
                        refunded=True)
 
+    # A build can report success, create the catalog entry, charge full price and
+    # publish nothing callable - which is exactly what happened on pgportal.gov.in.
+    # An empty action list is not a success no matter what the status field says.
     action_id = done.get("action_id") or ""
+    if not action_id:
+        for a in anakin.catalog_actions(gap["domain"].replace(".", "-")):
+            action_id = a.get("action_id") or a.get("id") or ""
+            if action_id:
+                break
+    if not action_id:
+        return _failed(br["id"], gap, "NO_ACTION_PRODUCED",
+                       "status=success but the catalog entry has no actions",
+                       refunded=False)
+
     db.remember_tool(action_id, origin="built", domain=gap["domain"],
                      build_id=br["id"], schema=done)
     db.finish_build(br["id"], status="success", action_id=action_id)
