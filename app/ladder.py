@@ -120,11 +120,15 @@ def prepare(case: dict) -> None:
                      "Sensitive data detected in the narrative and excluded from all filings: "
                      + "; ".join(facts["sensitive_flags"]))
 
-    if not facts["ready_to_file"] and facts["missing_info"]:
-        db.update_case(cid, amount_claimed=facts["amount_inr"] or case["amount_claimed"])
-        ask_citizen(cid, facts["missing_info"])
-        return
-
+    # Scope is decided BEFORE asking for anything else, even when facts are missing.
+    #
+    # The order used to be the other way round, and it produced the exact discourtesy
+    # this project exists to fix: a municipal pothole complaint was asked for the
+    # pothole's GPS coordinates, and only once the citizen had gone and found them was
+    # it told CPGRAMS is the wrong portal entirely. Whether a matter belongs here does
+    # not depend on the detail that is missing - a pothole is a municipal question with
+    # or without coordinates - so the question that can be answered now gets answered
+    # now. It costs one routing call on cases that will end up asking anyway.
     db.log_event(cid, "agent", "Choosing the correct ministry and category.")
     routing = route_case(facts, case["narrative_raw"], case["category"])
     db.update_case(cid, routing_json=json.dumps(routing))
@@ -137,6 +141,13 @@ def prepare(case: dict) -> None:
         # Tell them. Declining silently is precisely the failure this project exists
         # to fix — a person who hears nothing cannot go anywhere else instead.
         notify.citizen(cid, "declined", reason=routing["out_of_scope_reason"])
+        return
+
+    # In scope, but we cannot file it yet. Now the question is worth asking, because
+    # the answer will actually be used.
+    if not facts["ready_to_file"] and facts["missing_info"]:
+        db.update_case(cid, amount_claimed=facts["amount_inr"] or case["amount_claimed"])
+        ask_citizen(cid, facts["missing_info"])
         return
 
     db.log_event(

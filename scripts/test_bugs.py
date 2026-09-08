@@ -218,6 +218,53 @@ def main() -> int:
           _session_token() != settings.console_password and _authed(_session_token())
           and not _authed(settings.console_password))
 
+    # ---------------------------------------------------------------------
+    # Shipped bug: an out-of-scope case was asked for more detail before anyone
+    # checked whether it belonged here at all. A municipal pothole complaint was
+    # asked for the pothole's GPS coordinates, and only after the citizen went and
+    # found them was it told CPGRAMS is the wrong portal. Scope does not depend on
+    # the missing detail, so it must be decided first.
+    import app.ladder as L
+    calls: list[str] = []
+    orig_extract, orig_route, orig_ask = L.extract_facts, L.route_case, L.ask_citizen
+
+    L.extract_facts = lambda *a, **k: (calls.append("extract") or {
+        "one_line_summary": "pothole", "sensitive_flags": [], "ready_to_file": False,
+        "missing_info": ["exact GPS coordinates"], "amount_inr": 0,
+        "reference_numbers": []})
+    L.route_case = lambda *a, **k: (calls.append("route") or {
+        "out_of_scope": True, "out_of_scope_reason": "municipal, not central",
+        "ministry_id": "", "ministry_name": "", "category_id": "",
+        "category_name": "", "confidence": 0.9, "rationale": ""})
+    L.ask_citizen = lambda *a, **k: calls.append("ask")
+
+    cid = db.create_case(citizen_name="Pothole Tester", citizen_email="p@example.com",
+                         citizen_phone="", category="other",
+                         narrative_raw="Pothole on my road, BBMP ignored it.")
+    L.prepare(db.get_case(cid))
+
+    check("scope is decided before the citizen is asked for anything",
+          calls == ["extract", "route"], f"call order was {calls}")
+    check("an out-of-scope case is never asked for missing detail",
+          "ask" not in calls, str(calls))
+    check("an out-of-scope case is closed, not left open",
+          db.get_case(cid)["status"] == "closed_unresolved",
+          db.get_case(cid)["status"])
+
+    # ... and the in-scope case must still get its question asked.
+    calls.clear()
+    L.route_case = lambda *a, **k: (calls.append("route") or {
+        "out_of_scope": False, "out_of_scope_reason": "", "ministry_id": "DOPOS",
+        "ministry_name": "Department of Posts", "category_id": "DOPOS-NONDEL",
+        "category_name": "Non-delivery", "confidence": 0.9, "rationale": "r"})
+    cid2 = db.create_case(citizen_name="Parcel Tester", citizen_email="q@example.com",
+                          citizen_phone="", category="india_post",
+                          narrative_raw="Parcel never arrived.")
+    L.prepare(db.get_case(cid2))
+    check("an in-scope case is still asked for what is missing", "ask" in calls, str(calls))
+
+    L.extract_facts, L.route_case, L.ask_citizen = orig_extract, orig_route, orig_ask
+
     failed = [r for r in results if not r[1]]
     print(f"\n{len(results) - len(failed)}/{len(results)} passed\n")
     return 1 if failed else 0
