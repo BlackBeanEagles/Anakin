@@ -14,7 +14,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from app import watch, web  # noqa: E402
+from app import db, watch, web  # noqa: E402
 from app.config import settings  # noqa: E402
 
 results: list[tuple[str, bool | None, str]] = []
@@ -27,6 +27,7 @@ def check(name: str, ok: bool | None, detail: str = "") -> None:
 
 
 def main() -> int:
+    db.init()   # the credit ledger lives here; the fetch layer reads it
     # ---------------- offline behaviour ----------------
     web.reset_tick_budget()
 

@@ -63,6 +63,64 @@ run in minutes while testing.
 
 ---
 
+## Reading the web, and building the tool that was missing
+
+Two of the pages this depends on are hard to read on purpose. The CPGRAMS status
+screen is session- and captcha-gated; India Post tracking is a JS-rendered ASP.NET
+form. A plain HTTP GET gets a landing page from both, which leaves the ladder running
+on a timer with no evidence to cite.
+
+So reads climb a ladder of their own, cheapest rung first:
+
+| Rung | Cost | What it is |
+|---|---|---|
+| Wire connector | 0 | a pre-built action for the site — returns fields, not a page |
+| cache | 0 | already read recently |
+| direct fetch | 0 | our own request, with robots.txt honoured |
+| Anakin proxy | 1 credit | the same request through residential routing |
+| headless browser | 1 credit | for pages that need JavaScript to exist at all |
+
+The top rung is the interesting one. [Anakin](https://anakin.io)'s Wire catalog holds
+roughly 5,000 pre-built actions across 991 sites. A connector returns *fields* —
+status, ministry, a dated history — so nothing has to be interpreted and nothing can
+be misinterpreted, and read-only actions run free through Zero Touch.
+
+**Neither site Persist needs is in that catalog.** Ask it how to check a government
+grievance and it offers box office charts and FAA airport restrictions. India Post is
+listed, but its six actions sell commemorative stamps and Gangajal — none of them
+track a parcel. See for yourself, free:
+
+```bash
+python scripts/forge.py          # the gap report. Spends nothing.
+```
+
+Which is why `forge.py` can also build one:
+
+```bash
+python scripts/forge.py --build cpgrams
+```
+
+It writes a specification, Anakin's builder generates a scraper, tests it against the
+live site, and publishes it. Persist then reads pgportal.gov.in through a connector
+that did not exist an hour earlier — and so can everyone else, because the build is
+public.
+
+**Why it is a command and not a ladder step.** A build blocks for minutes while
+`ladder.tick()` runs every 20 seconds and sweeps the whole queue, so forging inside it
+would freeze every case behind one grievance. It also costs 25 of 300 credits, which
+per case is bankruptcy by the third one. A connector is built **once** and inherited
+free by every case after it.
+
+**When it fails**, which it may — government portals can be out of scope for their
+builder — the failure is recorded, explained, and *measured*: the site is re-read
+uncached through the ordinary chain and the answer written next to the failure, so
+"does this still work without the connector?" is a fact rather than a hope. Failed
+attempts are published on `/toolbox` alongside the successes.
+
+Credits are metered before each call against two ceilings — the global budget and one
+case's share of it — and calls are refused, never silently degraded. The whole ledger
+is public at `/toolbox`.
+
 ## Quick start
 
 ```bash
@@ -159,8 +217,12 @@ app/
   whatsapp.py    WhatsApp intake with an explicit consent handshake
   notify.py      status updates to the citizen
   taxonomy.json  CPGRAMS tree; officer contacts verified, categories not
-  web.py         polite fetch layer for public government pages
+  web.py         polite fetch layer — cache, robots.txt, then Anakin
   watch.py       reads live status pages before escalating
+  wire.py        reads a site through its Wire connector instead of scraping it
+  anakin.py      the web-data API client, and the credit budget that governs it
+  catalog.py     local index over 991 sites — the fix for a fuzzy /resolve
+  fallback.py    what happens when a connector cannot be built
   agent/
     extract.py   narrative → structured, dated, referenced facts
     route.py     facts → ministry/category, with confidence and a rationale
@@ -176,6 +238,11 @@ scripts/
   test_ladder.py walks a case through all 6 rungs + reject + blocked paths
   test_bugs.py   regressions for bugs that actually shipped
   test_coerce.py schema-coercion tests
+  test_wire.py   the path from a forged connector to a fact about a case
+  test_forge_fallback.py   every way a build can fail, exercised offline
+  forge.py       the gap report, and building a connector for what is missing
+  verify_taxonomy.py       checks who grievances get sent to, against live sources
+  anakin_doctor.py         Anakin config + a live round trip
   seed_demo.py   three demo cases
 ```
 
@@ -192,6 +259,8 @@ Run it before you demo, deploy, or record anything. Individually:
 | `test_coerce.py` | the schema-coercion net that lets free-tier models drop fields |
 | `test_ladder.py` | all six rungs, the reject path, the blocked-case path |
 | `test_bugs.py` | **every bug that has actually shipped and been fixed** |
+| `test_wire.py` | binding a connector nobody has seen to a case's identifiers |
+| `test_forge_fallback.py` | every way a build fails, and that the project survives each |
 | `run_eval.py --baseline-only` | routing accuracy of the no-LLM baseline (no key needed) |
 
 `test_ladder.py` exists because rungs 3–5, reject, and the blocked path are ones you
@@ -369,9 +438,14 @@ Two useful corrections that came out of checking the real directory:
 
 ## ⚠️ Still unverified: the category names
 
-`_meta.categories_verified` is `false`. The ministries and officer contacts are real, but
-the category names under each are still seed data. Routing accuracy is the product's core
-claim, so before you demo it:
+`_meta.categories_verified` is `false`. **The contacts have now been checked** — run
+`python scripts/verify_taxonomy.py` and it reports 0 must-fix across all 12 ministries:
+every address is syntactically valid, non-placeholder, unique, on a government domain
+that accepts mail, and present in the live nodal officer directory.
+
+What that check cannot tell you is whether a role address is still *read*, whether a
+named officer is still in post, and whether the category names match the portal's own
+dropdowns. Routing accuracy is the product's core claim, so before you demo it:
 
 1. File one grievance manually on https://pgportal.gov.in.
 2. Screenshot every dropdown at every level.
@@ -406,13 +480,14 @@ Report the failures too. The losses are what make the wins believable.
   so two workers would double-tick cases. Keep it at one worker.
 - **No CSRF tokens** on console forms (see Safety above).
 
-## The three public surfaces
+## The four public surfaces
 
 | Route | What it's for |
 |---|---|
 | `/` | the live ledger — every case, every action, wins and losses |
 | `/scoreboard` | **which departments actually answer** — deflection rate per ministry |
 | `/case/<id>` | one case, including the before/after |
+| `/toolbox` | **the receipts** — every connector used, every credit spent, every build attempt including the failed ones |
 | `/api/ledger` | the whole thing as JSON, so the win rate is auditable, not just claimed |
 
 **The before/after** on each case page is the most legible thing in the product: the

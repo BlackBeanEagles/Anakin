@@ -32,6 +32,7 @@ same reason the case ledger is: a number you can audit is worth more than a clai
 """
 import json
 import logging
+import sqlite3
 import time
 
 import httpx
@@ -93,6 +94,17 @@ def remaining() -> int:
 def _meter(endpoint: str, credits: int, detail: str, *, case_id: str = "",
            ok: bool = True) -> None:
     from . import db
+    try:
+        _write_meter(db, endpoint, credits, detail, case_id, ok)
+    except sqlite3.Error as exc:
+        # A lost ledger row is bad; a crashed read is worse. Log loudly and let the
+        # fetch finish - the budget check above already failed closed if it mattered.
+        log.error("anakin: could not record %d credits for %s: %s",
+                  credits, endpoint, exc)
+
+
+def _write_meter(db, endpoint: str, credits: int, detail: str, case_id: str,
+                 ok: bool) -> None:
     with db.connect() as conn:
         conn.execute(
             "INSERT INTO credits (ts, case_id, endpoint, detail, credits, ok) "
@@ -113,6 +125,13 @@ def case_spent(case_id: str) -> int:
 def _afford(cost: int, *, case_id: str = "") -> bool:
     """Two ceilings, and both have to hold.
 
+    Fails closed. If the ledger cannot be read at all - an uninitialised database, a
+    schema older than the credits table, a locked file - this refuses rather than
+    assuming the budget is intact. Spending money you cannot account for is the one
+    outcome worse than not reading a page, and until a key was configured this path
+    was simply never reached: the first real use of it crashed the whole fetch layer
+    on a missing table, which is exactly the failure the ladder is built to avoid.
+
     The global one protects the week. The per-case one protects it from a single
     stubborn grievance: a case that gets watched every tick for six days would
     quietly consume the entire budget on its own, and the first anyone would know
@@ -120,11 +139,18 @@ def _afford(cost: int, *, case_id: str = "") -> bool:
     """
     if cost <= 0:
         return True
-    if remaining() < cost:
-        log.warning("anakin: refusing %d-credit call, only %d left of %d",
-                    cost, remaining(), settings.anakin_credit_budget)
+    try:
+        left = remaining()
+        used_here = case_spent(case_id) if case_id else 0
+    except sqlite3.Error as exc:
+        log.warning("anakin: cannot read the credit ledger (%s) - refusing the call", exc)
         return False
-    if case_id and case_spent(case_id) + cost > settings.anakin_case_cap:
+
+    if left < cost:
+        log.warning("anakin: refusing %d-credit call, only %d left of %d",
+                    cost, left, settings.anakin_credit_budget)
+        return False
+    if case_id and used_here + cost > settings.anakin_case_cap:
         log.info("anakin: case %s has used its %d-credit share",
                  case_id, settings.anakin_case_cap)
         return False

@@ -12,6 +12,12 @@ Two things come back that the timer never had:
   2. Evidence to cite in the appeal - "tracking still reads 'in transit' 41 days
      after booking" is a fact the department has to answer.
 
+Where a Wire connector exists for the site, it is used first: it returns fields
+rather than a page, costs nothing through Zero Touch, and survives the redesigns
+that break scrapers. Everything below is what happens when there is no connector -
+which, for a government portal nothing in a 991-site catalog covers, is the normal
+case until one is forged.
+
 Reading is done by the model rather than CSS selectors. Government pages are
 inconsistent and get redesigned; a model reading visible text survives that, and
 degrades to "cannot tell" instead of silently matching the wrong element.
@@ -23,7 +29,7 @@ before - live reading is an improvement on the floor, never a new dependency.
 import json
 import logging
 
-from . import db, web
+from . import db, web, wire
 from .config import settings
 from .llm import LLMError, obj, structured
 
@@ -108,6 +114,58 @@ def _read(url: str, what: str, reference: str, case_id: str = "") -> dict | None
     return got
 
 
+def _via_wire(domain: str, values: dict, source_url: str, *,
+              case_id: str = "") -> dict | None:
+    """Try the connector before the scraper. None when there isn't one, or it missed.
+
+    This is the rung the forge exists to create. Where a connector is held for a
+    domain, it is strictly better than fetching the page: it costs nothing through
+    Zero Touch, it survives a redesign that would move the text a scraper depends
+    on, and it returns fields rather than prose - so the model is not asked to
+    interpret anything and cannot misinterpret it.
+
+    The return is shaped exactly like `_read`'s so the caller cannot tell which rung
+    answered. That symmetry is the point: the connector is an upgrade to how a page
+    gets read, never a second code path the ladder has to know about.
+    """
+    got = wire.read(domain, values, case_id=case_id)
+    if not got:
+        return None
+
+    data = got["data"]
+    flat = wire.summarise(got, limit=1200)
+    lowered = flat.lower()
+
+    # Structured output needs no model to read it, but it does need interpreting
+    # against our own vocabulary - "disposed of" and "closed" mean the same thing to
+    # a department and different things to a dict.
+    closed = any(w in lowered for w in
+                 ("disposed", "closed", "resolved", "replied", "delivered"))
+    pending = any(w in lowered for w in
+                  ("pending", "under process", "in transit", "open", "receipt"))
+
+    status_text = ""
+    if isinstance(data, dict):
+        for key in ("status", "current_status", "status_text", "state"):
+            if data.get(key):
+                status_text = str(data[key])
+                break
+    status_text = status_text or flat[:200]
+
+    return {
+        "readable": True,
+        "why_not": "",
+        "status_text": status_text,
+        "closed": closed,
+        "still_pending": pending and not closed,
+        "last_event_date": str((data or {}).get("last_event_date", ""))
+                           if isinstance(data, dict) else "",
+        "evidence": flat[:300],
+        "source_url": source_url,
+        "via": f"wire:{got['action_id']}",
+    }
+
+
 def check_case(case: dict) -> dict | None:
     """Look at the live web for this case. None if nothing could be read.
 
@@ -123,8 +181,12 @@ def check_case(case: dict) -> dict | None:
 
     # 1. the grievance itself
     if case.get("cpgrams_reg_no"):
-        got = _read(settings.cpgrams_status_url, "a CPGRAMS grievance",
-                    case["cpgrams_reg_no"], case_id=case["id"])
+        got = _via_wire("pgportal.gov.in",
+                        {"registration_number": case["cpgrams_reg_no"]},
+                        settings.cpgrams_status_url, case_id=case["id"])
+        if got is None:
+            got = _read(settings.cpgrams_status_url, "a CPGRAMS grievance",
+                        case["cpgrams_reg_no"], case_id=case["id"])
         if got and got["readable"]:
             got["kind"] = "grievance_status"
             findings.append(got)
@@ -136,8 +198,11 @@ def check_case(case: dict) -> dict | None:
         if not value:
             continue
         if "consign" in kind or "speed" in kind or "track" in kind:
-            got = _read(settings.indiapost_track_url, "an India Post consignment",
-                        value, case_id=case["id"])
+            got = _via_wire("indiapost.gov.in", {"consignment_number": value},
+                            settings.indiapost_track_url, case_id=case["id"])
+            if got is None:
+                got = _read(settings.indiapost_track_url, "an India Post consignment",
+                            value, case_id=case["id"])
             if got and got["readable"]:
                 got["kind"] = "consignment"
                 findings.append(got)
