@@ -323,3 +323,45 @@ def stats() -> dict[str, Any]:
         "max_rung": max([c["rung"] for c in rows], default=0),
         "win_rate": round(100 * len(resolved) / len(filed), 1) if filed else 0.0,
     }
+
+
+# ---------------------------------------------------------------- tools
+
+def remember_tool(action_id: str, *, origin: str, catalog: str = "", domain: str = "",
+                  credits: int = 0, schema: Any = None, build_id: str = "",
+                  funded_by: str = "") -> None:
+    """Record a tool the first time it is held.
+
+    Later sightings only bump counters, so `first_seen`, `origin` and `funded_by`
+    stay true to the moment it entered the toolbox rather than drifting to the most
+    recent use.
+    """
+    with connect() as conn:
+        conn.execute(
+            """INSERT INTO tools (action_id, first_seen, catalog, domain, origin,
+                                  credits, schema_json, build_id, funded_by)
+               VALUES (?,?,?,?,?,?,?,?,?)
+               ON CONFLICT(action_id) DO NOTHING""",
+            (action_id, now(), catalog or None, domain or None, origin, credits,
+             jdump(schema) if schema is not None else None, build_id or None,
+             funded_by or None))
+
+
+def score_tool(action_id: str, won: bool) -> None:
+    with connect() as conn:
+        conn.execute(
+            "UPDATE tools SET uses = uses + 1, wins = wins + ? WHERE action_id = ?",
+            (1 if won else 0, action_id))
+
+
+def tools(origin: str = "") -> list[dict]:
+    with connect() as conn:
+        if origin:
+            rows = conn.execute(
+                "SELECT * FROM tools WHERE origin=? ORDER BY first_seen DESC",
+                (origin,)).fetchall()
+        else:
+            rows = conn.execute(
+                "SELECT * FROM tools ORDER BY origin DESC, uses DESC").fetchall()
+    return [dict(r) for r in rows]
+

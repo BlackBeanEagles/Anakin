@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Toolbox — what it cost to look{% endblock %}
+{% block body %}
+
+<section class="hero">
+  {% include "_art.html" %}
+  <div class="eyebrow">Receipts</div>
+  <h1>What it cost to look, and what had to be built.</h1>
+  <p>
+    Reading a captcha-gated government page is a claim, so here is the evidence behind it:
+    every connector used, every credit spent, and the connectors that did not exist
+    until this project paid to have them made.
+  </p>
+
+  <div class="stats">
+    <div class="stat"><div class="n">{{ forged|length }}</div><div class="k">Connectors built</div></div>
+    <div class="stat"><div class="n">{{ found|length }}</div><div class="k">Found in the catalog</div></div>
+    <div class="stat"><div class="n">{{ spent }}</div><div class="k">Credits spent</div></div>
+    <div class="stat"><div class="n">{{ budget - spent }}</div><div class="k">Remaining</div></div>
+  </div>
+</section>
+
+{% if forged %}
+<h2>Built because nothing covered them</h2>
+<p>
+  India's national grievance portal is not in Anakin's catalog of 991 sites. Neither is
+  India Post consignment tracking. Each of these cost {{ build_cost }} credits once, and is
+  now public — every case here uses it free, and so can anyone else.
+</p>
+<table>
+  <tr><th>Connector</th><th>Site</th><th>Built</th><th>Useful</th></tr>
+  {% for t in forged %}
+  <tr>
+    <td><code>{{ t.action_id }}</code></td>
+    <td>{{ t.domain }}</td>
+    <td>{{ t.first_seen[:10] }}</td>
+    <td>{{ t.wins }}/{{ t.uses }}</td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<div class="banner info">
+  <strong>Nothing built yet.</strong> The gaps are real and confirmed against all 991
+  catalogued sites — run <code>python scripts/forge.py</code> to see them.
+</div>
+{% endif %}
+
+<h2>Every call that could have cost something</h2>
+<table>
+  <tr><th>When</th><th>Endpoint</th><th>Detail</th><th>Credits</th></tr>
+  {% for c in ledger %}
+  <tr>
+    <td>{{ c.ts[:16].replace('T', ' ') }}</td>
+    <td>{{ c.endpoint }}</td>
+    <td>{{ c.detail }}</td>
+    <td>{% if c.credits %}{{ c.credits }}{% else %}free{% endif %}</td>
+  </tr>
+  {% else %}
+  <tr><td colspan="4">Nothing metered yet.</td></tr>
+  {% endfor %}
+</table>
+
+<p class="muted">
+  Free by design: the catalog listing, action discovery and Zero Touch runs are all
+  keyless, so narrowing down which connector to use never costs anything. Credits go
+  on the reads that a plain request could not get.
+</p>
+
+{% endblock %}

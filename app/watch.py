@@ -79,9 +79,9 @@ SCHEMA = obj(
 )
 
 
-def _read(url: str, what: str, reference: str) -> dict | None:
+def _read(url: str, what: str, reference: str, case_id: str = "") -> dict | None:
     """Fetch one page and have the model read it. None if it could not be read."""
-    page = web.get(url)
+    page = web.get(url, case_id=case_id)
     if not page.ok:
         log.info("watch: %s unreachable (%s)", url, page.reason)
         return None
@@ -101,6 +101,10 @@ def _read(url: str, what: str, reference: str) -> dict | None:
         log.info("watch: model could not read %s (%s)", url, exc)
         return None
     got["source_url"] = url
+    # How the page was obtained matters to the record. "Read the CPGRAMS status
+    # page" and "read it through a headless browser after the direct request was
+    # refused" are different claims, and the appeal quotes this evidence.
+    got["via"] = page.via
     return got
 
 
@@ -120,7 +124,7 @@ def check_case(case: dict) -> dict | None:
     # 1. the grievance itself
     if case.get("cpgrams_reg_no"):
         got = _read(settings.cpgrams_status_url, "a CPGRAMS grievance",
-                    case["cpgrams_reg_no"])
+                    case["cpgrams_reg_no"], case_id=case["id"])
         if got and got["readable"]:
             got["kind"] = "grievance_status"
             findings.append(got)
@@ -132,7 +136,8 @@ def check_case(case: dict) -> dict | None:
         if not value:
             continue
         if "consign" in kind or "speed" in kind or "track" in kind:
-            got = _read(settings.indiapost_track_url, "an India Post consignment", value)
+            got = _read(settings.indiapost_track_url, "an India Post consignment",
+                        value, case_id=case["id"])
             if got and got["readable"]:
                 got["kind"] = "consignment"
                 findings.append(got)
@@ -143,7 +148,8 @@ def check_case(case: dict) -> dict | None:
     primary = findings[0]
     db.log_event(
         case["id"], "observed",
-        f"Read {primary['source_url']} — {primary['status_text'] or 'status unclear'}"
+        f"Read {primary['source_url']} via {primary.get('via', 'direct')} — "
+        f"{primary['status_text'] or 'status unclear'}"
         + (f" · {primary['evidence']}" if primary["evidence"] else ""),
     )
     return {"findings": findings, "primary": primary}

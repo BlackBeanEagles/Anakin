@@ -54,6 +54,10 @@ class Page:
     reason: str = ""
     from_cache: bool = False
     fetched_at: float = field(default_factory=time.time)
+    # How this page was obtained: direct | anakin | anakin+browser. Shown on the
+    # case timeline, because "we read the captcha-gated page" is only credible if
+    # it also says how.
+    via: str = "direct"
 
     @property
     def short(self) -> str:
@@ -102,14 +106,14 @@ def _read_cache(url: str) -> Page | None:
         return None
     return Page(url=url, ok=blob["ok"], status=blob["status"], text=blob["text"],
                 reason=blob.get("reason", ""), from_cache=True,
-                fetched_at=blob["fetched_at"])
+                fetched_at=blob["fetched_at"], via=blob.get("via", "direct"))
 
 
 def _write_cache(page: Page) -> None:
     try:
         _cache_path(page.url).write_text(json.dumps({
             "ok": page.ok, "status": page.status, "text": page.text,
-            "reason": page.reason, "fetched_at": page.fetched_at,
+            "reason": page.reason, "fetched_at": page.fetched_at, "via": page.via,
         }), encoding="utf-8")
     except OSError as exc:
         log.warning("cache write failed: %s", exc)
@@ -143,24 +147,8 @@ def _throttle(host: str) -> None:
     _last_hit[host] = time.time()
 
 
-def get(url: str, *, use_cache: bool = True) -> Page:
-    """Fetch a public page. Never raises - failure is a Page with ok=False."""
-    global _tick_budget
-
-    if use_cache:
-        cached = _read_cache(url)
-        if cached:
-            return cached
-
-    if _tick_budget <= 0:
-        return Page(url, ok=False, reason="fetch budget for this tick exhausted")
-
-    if not _robots_allows(url):
-        return Page(url, ok=False, reason="disallowed by robots.txt")
-
-    _tick_budget -= 1
-    _throttle(urlparse(url).netloc)
-
+def _direct(url: str) -> Page:
+    """The original path: our own client, our own IP, robots.txt obeyed."""
     try:
         r = httpx.get(url, timeout=TIMEOUT_SECONDS, follow_redirects=True,
                       headers={"User-Agent": USER_AGENT,
@@ -177,8 +165,87 @@ def get(url: str, *, use_cache: bool = True) -> Page:
         page = Page(url, ok=False, reason=f"timed out after {TIMEOUT_SECONDS:.0f}s")
     except httpx.HTTPError as exc:
         page = Page(url, ok=False, reason=f"{type(exc).__name__}: {exc}")
+    return page
+
+
+def _via_anakin(url: str, case_id: str = "") -> Page | None:
+    """Read the page through Anakin. None when it could not be read either.
+
+    Two rungs, because they cost the same. A plain proxied fetch handles the pages
+    that only refused us over who was asking; the headless browser handles the ones
+    that need JavaScript to render at all - India Post's tracking form is the whole
+    reason that second rung exists. Browser mode is not billed extra, so the only
+    thing spent on the retry is time.
+    """
+    from . import anakin
+
+    got = anakin.scrape(url, case_id=case_id)
+    if got.ok and got.markdown.strip():
+        return Page(url, ok=True, status=200, text=got.markdown,
+                    reason="", via="anakin")
+
+    if settings.anakin_use_browser_fallback:
+        got = anakin.scrape(url, use_browser=True, case_id=case_id)
+        if got.ok and got.markdown.strip():
+            return Page(url, ok=True, status=200, text=got.markdown,
+                        reason="", via="anakin+browser")
+
+    if got.reason:
+        log.info("anakin could not read %s: %s", url, got.reason)
+    return None
+
+
+def get(url: str, *, use_cache: bool = True, case_id: str = "") -> Page:
+    """Fetch a public page. Never raises - failure is a Page with ok=False.
+
+    The ladder, cheapest rung first:
+
+      1. the on-disk cache            free
+      2. a direct httpx GET           free
+      3. Anakin, proxied              1 credit
+      4. Anakin, headless browser     1 credit
+
+    Rungs 3 and 4 only run when the one above returned nothing usable, so a page
+    that was readable anyway costs nothing - which is what makes 300 credits last a
+    week. `WEB_BACKEND=anakin` skips straight to rung 3, which is for demonstrating
+    the integration deliberately, not for running the queue.
+    """
+    global _tick_budget
+
+    if use_cache:
+        cached = _read_cache(url)
+        if cached:
+            return cached
+
+    if _tick_budget <= 0:
+        return Page(url, ok=False, reason="fetch budget for this tick exhausted")
+
+    # robots.txt governs us whoever carries the request. Routing through someone
+    # else's proxy pool does not change who is asking or why, and a scraper that
+    # launders a refusal through a vendor is still ignoring it.
+    if not _robots_allows(url):
+        return Page(url, ok=False, reason="disallowed by robots.txt")
+
+    _tick_budget -= 1
+    _throttle(urlparse(url).netloc)
+
+    backend = settings.web_backend
+    use_anakin = settings.anakin_enabled
+
+    if backend == "anakin" and use_anakin:
+        page = _via_anakin(url, case_id) or Page(
+            url, ok=False, reason="Anakin could not read this page")
+    else:
+        page = _direct(url)
+        # The interesting case: our own request was refused or fobbed off with a
+        # landing page. Before this existed that was the end of the read and the
+        # ladder fell back to its timer.
+        if not page.ok and backend == "auto" and use_anakin:
+            log.info("direct fetch of %s failed (%s) - escalating to Anakin",
+                     url, page.reason)
+            page = _via_anakin(url, case_id) or page
 
     _write_cache(page)
-    log.info("GET %s -> %s%s", url, page.status or page.reason,
+    log.info("GET %s -> %s via %s%s", url, page.status or page.reason, page.via,
              " (cached)" if page.from_cache else "")
     return page

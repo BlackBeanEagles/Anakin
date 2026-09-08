@@ -59,3 +59,38 @@ CREATE TABLE IF NOT EXISTS events (
 CREATE INDEX IF NOT EXISTS idx_cases_next   ON cases(next_action_at);
 CREATE INDEX IF NOT EXISTS idx_actions_case ON actions(case_id);
 CREATE INDEX IF NOT EXISTS idx_events_case  ON events(case_id);
+
+-- Every Anakin call that costs something, metered before it goes out. The free tier
+-- is 300 credits for the week, so "what did this case cost to watch" is a question
+-- with a real answer, and the ledger page can show it rather than assert it.
+-- A failed call is kept with credits=0 and ok=0: the attempt is part of the record.
+CREATE TABLE IF NOT EXISTS credits (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    ts          TEXT NOT NULL,
+    case_id     TEXT REFERENCES cases(id),
+    endpoint    TEXT NOT NULL,           -- url-scraper | wire-run | build-request
+    detail      TEXT NOT NULL,
+    credits     INTEGER NOT NULL DEFAULT 0,
+    ok          INTEGER NOT NULL DEFAULT 1
+);
+
+CREATE INDEX IF NOT EXISTS idx_credits_case ON credits(case_id);
+
+-- Wire actions this project has held. `origin` is the column that matters: a row
+-- saying 'built' is a connector that did not exist until a case needed it, and was
+-- published back into the shared catalog. Kept separate from `credits` because a
+-- tool outlives the run that paid for it - the first case funds it, every case
+-- afterwards uses it free.
+CREATE TABLE IF NOT EXISTS tools (
+    action_id     TEXT PRIMARY KEY,
+    first_seen    TEXT NOT NULL,
+    catalog       TEXT,
+    domain        TEXT,
+    origin        TEXT NOT NULL,          -- catalog | built
+    credits       INTEGER NOT NULL DEFAULT 0,
+    schema_json   TEXT,
+    build_id      TEXT,
+    funded_by     TEXT,                   -- the case that paid for the build
+    uses          INTEGER NOT NULL DEFAULT 0,
+    wins          INTEGER NOT NULL DEFAULT 0
+);

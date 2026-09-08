@@ -262,6 +262,26 @@ def _sendable(address: str | None) -> bool:
     return not any(bad in a.upper() for bad in ("VERIFY-ME", "EXAMPLE.COM", "CHANGEME", "TODO"))
 
 
+@app.get("/toolbox", response_class=HTMLResponse)
+def toolbox(request: Request):
+    """What it cost to watch the web, and what had to be built to do it.
+
+    Public for the same reason the case ledger is. A project that claims it reads
+    captcha-gated government pages should show the receipts: which connector was
+    used, what each read cost, and which connector did not exist until this project
+    paid to have it made.
+    """
+    from . import anakin
+    return templates.TemplateResponse(request, "toolbox.html", {
+        "forged": db.tools("built"),
+        "found": [t for t in db.tools() if t["origin"] != "built"],
+        "ledger": anakin.ledger(60),
+        "spent": anakin.spent(),
+        "budget": settings.anakin_credit_budget,
+        "build_cost": anakin.BUILD_COST,
+    })
+
+
 @app.get("/scoreboard", response_class=HTMLResponse)
 def scoreboard(request: Request):
     return templates.TemplateResponse(request, "scoreboard.html", {

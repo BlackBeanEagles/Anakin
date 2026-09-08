@@ -88,6 +88,51 @@ class Settings:
         "INDIAPOST_TRACK_URL", "https://www.indiapost.gov.in/_layouts/15/dop.portal.tracking/trackconsignment.aspx")
     web_reading_enabled = _bool("WEB_READING", True)
 
+    # ---- Anakin.io web-data API ----
+    # The escalation path for pages a plain GET cannot read. Without a key the app
+    # behaves exactly as it did before: direct fetch, and a polite failure.
+    #
+    # WEB_BACKEND:
+    #   direct  - httpx only. Free, and blind to captcha-gated pages.
+    #   auto    - httpx first, Anakin only when the direct read fails. The default,
+    #             because it spends nothing on pages that were readable anyway.
+    #   anakin  - always through Anakin. Costs a credit per page; use it to prove
+    #             the integration on camera, not to run the week.
+    anakin_api_key = os.getenv("ANAKIN_API_KEY", "").strip()
+    anakin_base_url = os.getenv("ANAKIN_BASE_URL", "https://api.anakin.io").strip()
+    web_backend = (os.getenv("WEB_BACKEND", "auto").strip().lower() or "auto")
+
+    # Proxy exit country. These are Indian government sites; routing a request for
+    # pgportal.gov.in out of Ohio is a good way to look like a bot.
+    anakin_country = os.getenv("ANAKIN_COUNTRY", "in").strip().lower()
+
+    # The free tier is 300 credits for the whole hackathon. This is a self-imposed
+    # ceiling below it, enforced in anakin.py before any paid call goes out, so a
+    # runaway tick cannot burn the budget the demo depends on.
+    anakin_credit_budget = int(os.getenv("ANAKIN_CREDIT_BUDGET", "260") or 260)
+
+    # One case's share of the budget. A grievance that stays open for six days is
+    # watched on every tick; without a per-case ceiling a single stubborn case can
+    # drain the whole week's credits and nothing announces it until reads start
+    # failing. Enforced alongside the global budget, not instead of it.
+    anakin_case_cap = int(os.getenv("ANAKIN_CASE_CREDIT_CAP", "12") or 12)
+
+    # The catalog listing is ~1MB of JSON and free to fetch, so it is cached on disk
+    # and searched offline. Discovery that costs a round trip per question is
+    # discovery nobody runs.
+    catalog_cache = Path(os.getenv("CATALOG_CACHE") or (data_dir / "catalog_cache.json"))
+    catalog_ttl_seconds = int(os.getenv("CATALOG_TTL", "86400") or 86400)
+    max_candidates = int(os.getenv("MAX_CANDIDATES", "12") or 12)
+
+    # Escalate to a real headless browser after a plain proxied scrape also fails.
+    # Costs no extra credits - only latency.
+    anakin_use_browser_fallback = _bool("ANAKIN_BROWSER_FALLBACK", True)
+
+    @property
+    def anakin_enabled(self) -> bool:
+        """Anakin is only reachable when a key exists and the backend asks for it."""
+        return bool(self.anakin_api_key) and self.web_backend in {"auto", "anakin"}
+
     @property
     def mock_llm(self) -> bool:
         return self.provider.kind == "mock"
