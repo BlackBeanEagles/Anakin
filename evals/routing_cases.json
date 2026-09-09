@@ -2,7 +2,9 @@
   "_meta": {
     "purpose": "Labelled set for measuring routing accuracy - the product's core claim.",
     "how_to_extend": "Add every real case you take, labelled with where it ACTUALLY got actioned. That turns your week of real cases into a growing eval set, which is the honest way to report accuracy.",
-    "note": "Expected labels follow app/taxonomy.json. Re-check them after you verify the taxonomy against the live portal."
+    "note": "Expected labels follow app/taxonomy.json. Re-check them after you verify the taxonomy against the live portal.",
+    "provenance": "The first 22 cases were authored alongside the router. The 'hard-' cases were added afterwards to break it: written from the patterns real complaints show on public consumer forums - backstory before the problem, amounts given but reference numbers omitted, the wrong authority named confidently, Hindi/English code-mixing, and formal or angry registers. No complaint text is reproduced from any source and no real names, numbers or addresses appear.",
+    "count": 52
   },
   "cases": [
     {
@@ -161,6 +163,216 @@
       "expect_category": "DOPOS-SPEED",
       "expect_out_of_scope": false,
       "why_hard": "It arrived, so this is not non-delivery; the specific ask is a refund of Speed Post charges for a missed guarantee."
+    },
+    {
+      "id": "hard-wrong-authority-1",
+      "expect_ministry": "DFS",
+      "expect_category": "DFS-TXN",
+      "expect_out_of_scope": false,
+      "narrative": "This is a railway problem so please forward to Railways. On 2 August Rs 3,400 was debited from my SBI account for a ticket that never got booked. Railways says the money never reached them and the bank keeps saying wait 7 working days. It has been five weeks."
+    },
+    {
+      "id": "hard-wrong-authority-2",
+      "expect_ministry": "MOCA",
+      "expect_category": "MOCA-BAG",
+      "expect_out_of_scope": false,
+      "narrative": "Complaint against the airport authority. My suitcase did not come out at Hyderabad after the IndiGo flight from Dubai on 19 August. The airline counter gave me a file reference and said 21 days. Nothing since. Rs 40,000 of goods inside."
+    },
+    {
+      "id": "hard-oos-state-transport",
+      "expect_ministry": null,
+      "expect_category": null,
+      "expect_out_of_scope": true,
+      "narrative": "KSRTC bus conductor refused to give me change of Rs 30 and behaved very rudely with an elderly passenger on the Mysore route. Bus number and time I have noted. This kind of thing should not happen in public transport."
+    },
+    {
+      "id": "hard-oos-state-ration",
+      "expect_ministry": null,
+      "expect_category": null,
+      "expect_out_of_scope": true,
+      "narrative": "Our ration card has not been updated for two years and the fair price shop dealer says my mother's name is deleted from the list. We are not getting rice since January. The taluk office keeps sending us back."
+    },
+    {
+      "id": "hard-oos-state-university",
+      "expect_ministry": null,
+      "expect_category": null,
+      "expect_out_of_scope": true,
+      "narrative": "Respected Sir, my convocation degree certificate from Bangalore University has not been issued even after 14 months of applying and paying the fee of Rs 1,200. I need it for a job offer which I may now lose. Kindly do the needful urgently."
+    },
+    {
+      "id": "hard-oos-state-water",
+      "expect_ministry": null,
+      "expect_category": null,
+      "expect_out_of_scope": true,
+      "narrative": "Paani nahi aa raha hai for the last 11 days in our whole street. BWSSB tanker comes only if we pay extra to the driver. Elderly people are suffering. Please take action against the local board office."
+    },
+    {
+      "id": "hard-oos-private-courier",
+      "expect_ministry": null,
+      "expect_category": null,
+      "expect_out_of_scope": true,
+      "narrative": "Blue Dart lost my package containing a laptop worth Rs 62,000 sent from Pune to Noida. Their customer care closed the ticket saying delivered but I never received it and there is no signature proof. Waybill number is with me."
+    },
+    {
+      "id": "hard-codemix-lpg",
+      "expect_ministry": "MOPNG",
+      "expect_category": "MOPNG-SUBSIDY",
+      "expect_out_of_scope": false,
+      "narrative": "Sir maine gas cylinder book kiya tha aur delivery bhi ho gayi lekin subsidy amount ab tak account mein nahi aaya. Pehle har baar 8 din mein aa jata tha. Ab teen refill ho gaye, koi subsidy nahi. Bank passbook check kiya, kuch nahi hai. Aadhaar linked hai already."
+    },
+    {
+      "id": "hard-codemix-epf",
+      "expect_ministry": "EPFO",
+      "expect_category": "EPFO-CLAIM",
+      "expect_out_of_scope": false,
+      "narrative": "Maine PF withdrawal ke liye online claim daala tha last month, form 19 and 10C dono. Claim reject ho gaya without any proper reason, sirf likha hai 'documents not sufficient'. Meri company band ho chuki hai to employer se attestation kaise karaun. Rs 1.8 lakh ka amount hai."
+    },
+    {
+      "id": "hard-formal-pension",
+      "expect_ministry": "DPPW",
+      "expect_category": "DPPW-FAMILY",
+      "expect_out_of_scope": false,
+      "narrative": "Respected Sir/Madam, With due respect I beg to state that my late husband was a retired employee who expired on 14 March. I submitted all the required documents including the death certificate and the descriptive roll to the office in April. Despite my repeated visits and several representations, the family pension has not been sanctioned till date. I am 71 years old and have no other source of income. Kindly do the needful at the earliest."
+    },
+    {
+      "id": "hard-formal-passport",
+      "expect_ministry": "MEA",
+      "expect_category": "MEA-PASSPORT",
+      "expect_out_of_scope": false,
+      "narrative": "Respected Authority, I had applied for re-issue of my passport in the month of June under normal category at the Seva Kendra. Police verification was completed and marked clear on the portal itself. However the status has been showing 'under review at RPO' for more than nine weeks now without any movement. My employment visa processing is held up on account of this."
+    },
+    {
+      "id": "hard-angry-tax",
+      "expect_ministry": "CBDT",
+      "expect_category": "CBDT-REFUND",
+      "expect_out_of_scope": false,
+      "narrative": "This is absolutely ridiculous!! Filed my ITR on time in July, got the intimation saying refund of Rs 47,320 is due, and NOTHING has come. Bank account is pre-validated, I checked three times. Every year the same drama. The helpline just disconnects. Do you people even work? I am a salaried person paying tax honestly and this is what I get."
+    },
+    {
+      "id": "hard-angry-telecom",
+      "expect_ministry": "DOT",
+      "expect_category": "DOT-BILL",
+      "expect_out_of_scope": false,
+      "narrative": "Complete cheating by the operator. My plan is Rs 399 monthly but they have charged me Rs 1,247 this month for so-called international roaming which I NEVER activated and NEVER travelled anywhere. Customer care raised a ticket and closed it saying charges are valid. Nobody explains anything. I have the bill screenshot."
+    },
+    {
+      "id": "hard-short-post",
+      "expect_ministry": "DOPOS",
+      "expect_category": "DOPOS-MO",
+      "expect_out_of_scope": false,
+      "narrative": "Money order sent 3 weeks back to my son, still not paid to him. Receipt is with me."
+    },
+    {
+      "id": "hard-short-rail",
+      "expect_ministry": "MOR",
+      "expect_category": "MOR-CATER",
+      "expect_out_of_scope": false,
+      "narrative": "Pantry charged me Rs 70 for a water bottle on train 12658. No bill given."
+    },
+    {
+      "id": "hard-short-epf",
+      "expect_ministry": "EPFO",
+      "expect_category": "EPFO-TRANSFER",
+      "expect_out_of_scope": false,
+      "narrative": "Changed jobs in May, PF from old company still not transferred to new UAN."
+    },
+    {
+      "id": "hard-rambling-gas",
+      "expect_ministry": "MOPNG",
+      "expect_category": "MOPNG-DIST",
+      "expect_out_of_scope": false,
+      "narrative": "I have been living in this locality since 1998 when my father was posted here and we have always taken our gas connection from the same agency near the market. Earlier the service was very good, the delivery boy would come on time and even carry the cylinder up. After the agency changed hands about two years ago everything has gone down. Now the point is this - they refuse to deliver unless we pay Rs 100 extra over the receipt amount, and when I asked for a bill the manager shouted at me in front of other customers. Other people in my building have the same experience but nobody wants to complain."
+    },
+    {
+      "id": "hard-rambling-bank",
+      "expect_ministry": "DFS",
+      "expect_category": "DFS-CHARGE",
+      "expect_out_of_scope": false,
+      "narrative": "I opened this savings account in 2011 when I joined my first job and I have never had any issue, always maintained good balance, even took a car loan from the same branch which I repaid fully before time. My problem is that since April they have been deducting some amount every month, sometimes Rs 236, sometimes Rs 590, showing as service charges and SMS charges and I don't know what all. Total about Rs 2,800 has gone. When I went to the branch the manager said it is as per guidelines and gave me no paper."
+    },
+    {
+      "id": "hard-missing-year",
+      "expect_ministry": "DOPOS",
+      "expect_category": "DOPOS-NONDEL",
+      "expect_out_of_scope": false,
+      "narrative": "Registered post sent on 6 February from Coimbatore to Ranchi has never been delivered. The tracking shows it left the sorting office and then stops. I have complained at the counter twice."
+    },
+    {
+      "id": "hard-cat-rail-access",
+      "expect_ministry": "MOR",
+      "expect_category": "MOR-ACCESS",
+      "expect_out_of_scope": false,
+      "narrative": "I am a wheelchair user and had booked the reserved coach seat with disability concession. At Vijayawada there was no ramp and no wheelchair available despite booking assistance in advance. Two coolies lifted me which was humiliating and unsafe."
+    },
+    {
+      "id": "hard-cat-post-office",
+      "expect_ministry": "DOPOS",
+      "expect_category": "DOPOS-OFFICE",
+      "expect_out_of_scope": false,
+      "narrative": "The sub post office in our area opens whenever the staff feel like, usually 11 am instead of 9, and shuts for two hours at lunch. Senior citizens stand outside waiting. The counter clerk is often not at the seat even during working hours."
+    },
+    {
+      "id": "hard-cat-tds",
+      "expect_ministry": "CBDT",
+      "expect_category": "CBDT-TDS",
+      "expect_out_of_scope": false,
+      "narrative": "My employer deducted TDS of Rs 88,000 for the financial year but it is not reflecting in my Form 26AS, only Rs 31,000 is showing. I have the salary slips showing the full deduction. Because of this my return is showing a demand instead of a refund."
+    },
+    {
+      "id": "hard-cat-ecom",
+      "expect_ministry": "DOCA",
+      "expect_category": "DOCA-ECOM",
+      "expect_out_of_scope": false,
+      "narrative": "Ordered a mixer grinder on an online marketplace during the sale, paid Rs 4,299 by UPI. They delivered an empty box with a brick inside. Return request was rejected twice saying the product was verified at dispatch. I have the unboxing video."
+    },
+    {
+      "id": "hard-cat-warranty",
+      "expect_ministry": "DOCA",
+      "expect_category": "DOCA-WARRANTY",
+      "expect_out_of_scope": false,
+      "narrative": "Bought a refrigerator with 10 year compressor warranty. Compressor failed in the third year. Service centre says the warranty is void because I did not get the annual servicing done, which was never mentioned anywhere in the warranty card."
+    },
+    {
+      "id": "hard-cat-mnp",
+      "expect_ministry": "DOT",
+      "expect_category": "DOT-MNP",
+      "expect_out_of_scope": false,
+      "narrative": "I raised a porting request with the UPC code more than a month ago. The new operator says the request keeps getting rejected by the existing operator citing dues, but I have zero outstanding and my bill is paid till date. Now the UPC has expired twice."
+    },
+    {
+      "id": "hard-cat-lc",
+      "expect_ministry": "DPPW",
+      "expect_category": "DPPW-LC",
+      "expect_out_of_scope": false,
+      "narrative": "My father is 84 and bedridden. We submitted the Jeevan Pramaan digital life certificate through the bank in November and got the acknowledgement. The pension has still been stopped from December saying life certificate not received. The bank says it is at the department end."
+    },
+    {
+      "id": "hard-looks-oos-mohua",
+      "expect_ministry": "MOHUA",
+      "expect_category": "MOHUA-GEN",
+      "expect_out_of_scope": false,
+      "narrative": "I was sanctioned a house under the central urban housing scheme and the first instalment came in 2023. The second and third instalments have never been released although the construction was verified and photographed by the officials. The house is half built and I have taken a private loan to survive."
+    },
+    {
+      "id": "hard-looks-central-oos",
+      "expect_ministry": null,
+      "expect_category": null,
+      "expect_out_of_scope": true,
+      "narrative": "The government hospital in our district has no functioning MRI machine for the past eight months and patients are being told to go to private centres and pay Rs 8,000. This is a government facility funded by public money and somebody must answer."
+    },
+    {
+      "id": "hard-oos-rti-appeal",
+      "expect_ministry": null,
+      "expect_category": null,
+      "expect_out_of_scope": true,
+      "narrative": "I filed an RTI in May asking for the file notings on my land record and the PIO has not replied within 30 days. I want to file the first appeal but I do not know the appellate authority's name. Please help me get the information."
+    },
+    {
+      "id": "hard-oos-consumer-court",
+      "expect_ministry": null,
+      "expect_category": null,
+      "expect_out_of_scope": true,
+      "narrative": "My case against a builder is going on in the consumer commission since 2021 for possession of my flat. The hearings keep getting adjourned and the opposite party does not appear. I want the commission to be directed to decide the matter quickly."
     }
   ]
 }
