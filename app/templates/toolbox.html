@@ -36,9 +36,9 @@
   <tr>
     <td>{{ b.domain }}</td>
     <td>{{ b.status }}{% if b.refunded %} · refunded{% endif %}</td>
-    <td>{{ b.code or '—' }}</td>
+    <td>{% if b.code %}<code>{{ b.code }}</code>{% else %}<span class="none">—</span>{% endif %}</td>
     <td>{{ b.credits }} cr</td>
-    <td>{{ b.fallback or '—' }}</td>
+    <td>{% if b.fallback %}{{ b.fallback }}{% else %}<span class="none">—</span>{% endif %}</td>
   </tr>
   {% endfor %}
 </table>
@@ -62,13 +62,13 @@
 <h2>Connectors in use</h2>
 <div class="tablewrap">
 <table>
-  <tr><th>Connector</th><th>Site</th><th>Since</th><th>Useful</th></tr>
+  <tr><th>Connector</th><th>Site</th><th>Since</th><th class="num">Useful</th></tr>
   {% for t in forged %}
   <tr>
     <td><code>{{ t.action_id }}</code></td>
-    <td>{{ t.domain }}</td>
+    <td><code>{{ t.domain }}</code></td>
     <td>{{ t.first_seen[:10] }}</td>
-    <td>{{ t.wins }}/{{ t.uses }}</td>
+    <td class="num">{{ t.wins }}/{{ t.uses }}</td>
   </tr>
   {% endfor %}
 </table>
@@ -78,13 +78,13 @@
 <h2>Every call that could have cost something</h2>
 <div class="tablewrap">
 <table>
-  <tr><th>When</th><th>Endpoint</th><th>Detail</th><th>Credits</th></tr>
+  <tr><th>When</th><th>Endpoint</th><th>Detail</th><th class="num">Credits</th></tr>
   {% for c in ledger %}
   <tr>
     <td>{{ c.ts[:16].replace('T', ' ') }}</td>
     <td>{{ c.endpoint }}</td>
     <td>{{ c.detail }}</td>
-    <td>{% if c.credits %}{{ c.credits }}{% else %}free{% endif %}</td>
+    <td class="num">{% if c.credits %}{{ c.credits }}{% else %}<span class="none">free</span>{% endif %}</td>
   </tr>
   {% else %}
   <tr><td colspan="4">Nothing metered yet.</td></tr>

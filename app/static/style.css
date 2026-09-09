@@ -24,6 +24,20 @@
    that encodes nothing, which is exactly why it is free to be colourful.
    ========================================================================== */
 
+/* Self-hosted rather than linked from a CDN, for one specific reason: this gets
+   screen-recorded. A font that arrives late, or not at all on a hotel connection,
+   swaps the headline to a fallback halfway through a take. 122KB of latin subset
+   is a cheap price for a typeface that cannot fail live.
+
+   One variable file covers 400-700, so weight changes cost no extra request. */
+@font-face {
+  font-family: "Source Serif 4";
+  src: url("/static/fonts/source-serif-4-var.woff2") format("woff2-variations");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
   color-scheme: light;
 
@@ -73,6 +87,12 @@
   --radius-sm: 9px;
   --mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
   --sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Display only. The subject is official correspondence, and a transitional serif
+     is what that correspondence is actually set in - but body copy stays sans,
+     because a ledger is scanned rather than read and the contrast between the two
+     is what makes the headline land. The fallback is a real stack, not a shrug. */
+  --serif: "Source Serif 4", "Iowan Old Style", "Palatino Linotype", Palatino,
+           Georgia, "Times New Roman", serif;
   --shadow: 0 1px 2px rgba(30,25,15,.04), 0 4px 16px rgba(30,25,15,.045);
 }
 
@@ -147,8 +167,13 @@ header.top nav a { color: var(--ink-2); }
 /* :not(.hero-art) matters — a bare `.hero > *` has equal specificity and, coming
    later, would reset the art to position:relative and collapse the SVG to 0×0. */
 .hero > *:not(.hero-art) { position: relative; z-index: 1; }
-.hero h1 { font-size: clamp(28px, 4.2vw, 41px); line-height: 1.13; letter-spacing: -.035em;
-           margin: 0 0 12px; max-width: 16ch; }
+/* Serif, and slightly larger than the sans version was: a text serif carries less
+   optical weight than a grotesque at the same size, and -.035em tracking that
+   flattered the sans closes the serif up too far. Both numbers were retuned
+   together rather than swapping the family and hoping. */
+.hero h1 { font-family: var(--serif); font-weight: 600;
+           font-size: clamp(30px, 4.5vw, 46px); line-height: 1.1;
+           letter-spacing: -.018em; margin: 0 0 12px; max-width: 17ch; }
 /* 56ch keeps the copy clear of the 360px art at full width; below 900px the art
    is hidden entirely rather than sitting behind the text */
 .hero p { color: var(--ink-2); margin: 0 0 28px; max-width: 56ch; font-size: 15.5px; }
@@ -161,7 +186,11 @@ header.top nav a { color: var(--ink-2); }
          border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); }
 .stat { background: var(--card); padding: 16px 16px 14px; position: relative;
         display: flex; flex-direction: column; justify-content: flex-start; }
-.stat .n { font-size: 26px; font-weight: 660; letter-spacing: -.035em; line-height: 1.1;
+/* The figures are the point of this row, so they get the display face too. Lining
+   tabular figures keep the columns aligned as counts change under the scheduler -
+   old-style figures would bounce the baseline on every tick. */
+.stat .n { font-family: var(--serif); font-size: 29px; font-weight: 600;
+           letter-spacing: -.012em; line-height: 1.08;
            font-variant-numeric: tabular-nums lining-nums; white-space: nowrap; }
 .stat .k { font-size: 10px; text-transform: uppercase; letter-spacing: .08em;
            color: var(--ink-4); margin-top: 5px; font-weight: 560; line-height: 1.35; }
@@ -243,10 +272,24 @@ h2 .count { font-family: var(--mono); color: var(--rung-ink); letter-spacing: .0
 .step.done.s3 { background: var(--rung-3); color: #fff; }
 .step.done.s4 { background: var(--rung-4); color: #fff; }
 .step.done.s5 { background: var(--rung-5); color: #fff; }
-.step.now { background: var(--ink); border-color: var(--ink); color: var(--paper);
-            font-weight: 580; box-shadow: 0 3px 12px rgba(23,21,18,.22); }
+.step.now, .step.now[class*="s"] { background: var(--ink); border-color: var(--ink);
+            color: var(--paper); font-weight: 580;
+            box-shadow: 0 3px 12px rgba(23,21,18,.22); }
+/* The "you are here" bar was --art-2, a decorative hue this system says encodes
+   nothing - so it was quietly doing an encoding job in a language nothing else on
+   the page speaks. It now carries the rung's own colour from the ramp, which means
+   the marker says *which* rung as well as *that* it is current, and the ladder
+   still reads as one sequence rather than five indigo chips and a red one.
+   The chip itself stays neutral ink on purpose: active is the absence of a status,
+   not a status of its own. */
 .step.now::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0;
-                   height: 3px; background: var(--art-2); }
+                   height: 3px; background: var(--rung-2); }
+.step.now.s0::after { background: var(--rung-0); }
+.step.now.s1::after { background: var(--rung-1); }
+.step.now.s2::after { background: var(--rung-2); }
+.step.now.s3::after { background: var(--rung-3); }
+.step.now.s4::after { background: var(--rung-4); }
+.step.now.s5::after { background: var(--rung-5); }
 .ladder-note { font-size: 13px; color: var(--ink-3); }
 
 /* ---------------------------------------------------------------- stamp */
@@ -412,7 +455,8 @@ footer.foot { border-top: 1px solid var(--edge); margin-top: 56px; padding-top: 
   border: 1px solid #e8e2d6;
 }
 .og .kicker { font-size: 22px; letter-spacing: .14em; text-transform: uppercase; color: #9a8f7d; }
-.og h1 { font-size: 76px; line-height: 1.06; margin: 22px 0 0; letter-spacing: -.02em; max-width: 20ch; }
+.og h1 { font-family: var(--serif); font-weight: 600; font-size: 78px; line-height: 1.04;
+         margin: 22px 0 0; letter-spacing: -.015em; max-width: 20ch; }
 .og p { font-size: 27px; line-height: 1.45; color: #4a463f; max-width: 44ch; margin: 26px 0 0; }
 .og .foot { display: flex; justify-content: space-between; align-items: flex-end; font-size: 22px; color: #6b6558; }
 /* The site's .stat carries a white card background that reads as a rendering glitch
@@ -420,7 +464,8 @@ footer.foot { border-top: 1px solid var(--edge); margin-top: 56px; padding-top: 
 .og .stat, .og .foot > div {
   background: none; border: 0; box-shadow: none; padding: 0; margin: 0;
 }
-.og .stat { font-size: 40px; font-weight: 600; color: #23211d; line-height: 1.1; }
+.og .stat { font-family: var(--serif); font-size: 42px; font-weight: 600;
+            color: #23211d; line-height: 1.1; font-variant-numeric: tabular-nums lining-nums; }
 
 /* Wide content scrolls inside its own box rather than widening the page.
    Without this the credit ledger's detail column made the whole of /toolbox
@@ -428,3 +473,41 @@ footer.foot { border-top: 1px solid var(--edge); margin-top: 56px; padding-top: 
    which is where a judge following a link is most likely to open it. */
 .tablewrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 .tablewrap table { min-width: 460px; }
+
+/* ---------------------------------------------------------------- tables
+
+   /toolbox shipped with browser-default tables - 15px bold headers, no rules,
+   no padding - next to a page that is otherwise carefully set. Data here is
+   references, credits and outcomes, so it follows the same rules the case ledger
+   already uses: monospace for anything you would read back to someone, tabular
+   figures so columns do not shift as the scheduler updates them, and hairlines
+   instead of zebra stripes, which add noise at this row count. */
+
+table { width: 100%; border-collapse: collapse; }
+
+th {
+  text-align: left;
+  font-size: 10px; text-transform: uppercase; letter-spacing: .085em;
+  font-weight: 600; color: var(--ink-4);
+  padding: 0 14px 8px 0; border-bottom: 1px solid var(--edge);
+  white-space: nowrap;
+}
+
+td {
+  font-size: 13.5px; line-height: 1.55; color: var(--ink-2);
+  padding: 11px 14px 11px 0; border-bottom: 1px solid var(--edge-soft);
+  vertical-align: top;
+}
+
+tr:last-child td { border-bottom: 0; }
+
+/* Anything a person would read back down a phone line is monospace, so digits and
+   letters cannot be confused. Same rule the case ledger follows for references. */
+td code, td .ref { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+
+/* Numbers align on their own column edge and keep the same width as they change. */
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums lining-nums;
+                 font-family: var(--mono); font-size: 12.5px; white-space: nowrap; }
+
+/* A dash is the honest rendering of "nothing here", and it should recede. */
+td .none { color: var(--ink-4); }

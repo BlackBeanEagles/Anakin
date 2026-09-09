@@ -16,7 +16,7 @@
 
   <div class="ladder">
     {% for r in RUNGS[:6] %}
-    <div class="step {% if case.rung > r.n %}done s{{ r.n }}{% elif case.rung == r.n %}now{% endif %}">
+    <div class="step {% if case.rung > r.n %}done s{{ r.n }}{% elif case.rung == r.n %}now s{{ r.n }}{% endif %}">
       <span class="n">RUNG {{ r.n }}</span>{{ r.label }}
     </div>
     {% endfor %}

@@ -20,8 +20,13 @@
        three open cases states a failure that has not happened yet - the scoreboard
        already suppresses per-department rates under three replies for the same
        reason, and the dashboard should not contradict it. #}
-    <div class="stat"><div class="n">{% if stats.resolved %}{{ stats.win_rate }}%{% else %}&mdash;{% endif %}</div>
-      <div class="k">Win rate{% if not stats.resolved %} · none closed yet{% endif %}</div></div>
+    {# The em dash carries "no data" on its own. An appended clause made the label
+       wrap to two lines and crowded every other cell in the row - the dash says the
+       same thing in one glyph, and the tooltip carries the rest for anyone who
+       wonders. #}
+    <div class="stat" {% if not stats.resolved %}title="No case has closed yet, so there is no rate to report."{% endif %}>
+      <div class="n">{% if stats.resolved %}{{ stats.win_rate }}%{% else %}&mdash;{% endif %}</div>
+      <div class="k">Win rate</div></div>
     <div class="stat"><div class="n">{{ stats.actions_sent }}</div><div class="k">Actions taken</div></div>
     <div class="stat good"><div class="n">₹{{ "{:,.0f}".format(stats.recovered) }}</div><div class="k">Recovered</div></div>
   </div>
