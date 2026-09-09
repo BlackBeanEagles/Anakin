@@ -5,10 +5,13 @@ closed weeks later as "not related to this department" and the citizen starts ov
 The router must also be willing to say "CPGRAMS is the wrong mechanism entirely".
 """
 import json
+import logging
 from functools import lru_cache
 from pathlib import Path
 
 from ..llm import obj, structured
+
+log = logging.getLogger("persist.route")
 
 TAXONOMY_PATH = Path(__file__).parent.parent / "taxonomy.json"
 
@@ -134,7 +137,7 @@ def route_case(facts: dict, narrative: str, category_hint: str = "") -> dict:
         f"EXTRACTED FACTS:\n{json.dumps(facts, indent=2, ensure_ascii=False)}\n\n"
         f"ORIGINAL NARRATIVE:\n---\n{narrative}\n---"
     )
-    return structured(
+    got = structured(
         system=SYSTEM,
         user=user,
         tool_name="record_routing",
@@ -142,6 +145,70 @@ def route_case(facts: dict, narrative: str, category_hint: str = "") -> dict:
         schema=SCHEMA,
         effort="high",  # the hard reasoning step - worth the tokens
     )
+    return repair(got)
+
+
+def repair(routing: dict) -> dict:
+    """Make the model's answer refer to things that exist.
+
+    The router once returned ministry `MOPP` - a plausible-looking code for the
+    pension department that is not in the taxonomy - while getting the category
+    (DPPW-LC) exactly right. Nothing checked, so the case would have gone on to look
+    up an officer for a ministry that does not exist, found none, and quietly lost
+    its email rung. A wrong answer that announces itself is fine; this one did not.
+
+    Two deterministic repairs, no second model call:
+
+      1. An unknown ministry with a known category is recoverable, because the
+         category namespace already names its owner - DPPW-LC can only belong to
+         DPPW. This is the MOPP case, and it fixes it exactly.
+      2. A category that does not belong to the chosen ministry is dropped rather
+         than guessed at. Filing under the wrong category inside the right ministry
+         is a recoverable annoyance; inventing one is not.
+
+    Names are always overwritten from the taxonomy, so a paraphrased department name
+    can never reach a letterhead.
+    """
+    tax = load_taxonomy()
+    by_ministry = {m["id"]: m for m in tax["ministries"]}
+    owner_of = {c["id"]: m["id"] for m in tax["ministries"] for c in m["categories"]}
+    name_of = {c["id"]: c["name"] for m in tax["ministries"] for c in m["categories"]}
+
+    if routing.get("out_of_scope"):
+        routing["ministry_id"] = ""
+        routing["category_id"] = ""
+        return routing
+
+    mid = (routing.get("ministry_id") or "").strip().upper()
+    cid = (routing.get("category_id") or "").strip().upper()
+
+    if mid not in by_ministry:
+        recovered = owner_of.get(cid, "")
+        if recovered:
+            log.warning("route: unknown ministry %r repaired to %s via category %s",
+                        mid, recovered, cid)
+            routing["repaired"] = f"ministry {mid or '(empty)'} -> {recovered}"
+            mid = recovered
+        else:
+            log.warning("route: unknown ministry %r and category %r - cannot repair",
+                        mid, cid)
+            routing["repaired"] = f"unknown ministry {mid or '(empty)'}, not recoverable"
+            routing["confidence"] = min(float(routing.get("confidence") or 0), 0.3)
+
+    if cid and owner_of.get(cid) != mid:
+        log.warning("route: category %r does not belong to %s - dropping it", cid, mid)
+        routing["repaired"] = (routing.get("repaired", "") +
+                               f"; dropped category {cid}").lstrip("; ")
+        cid = ""
+
+    routing["ministry_id"] = mid if mid in by_ministry else ""
+    routing["category_id"] = cid
+    # Never let a paraphrased name reach a letterhead.
+    if mid in by_ministry:
+        routing["ministry_name"] = by_ministry[mid]["name"]
+    if cid:
+        routing["category_name"] = name_of[cid]
+    return routing
 
 
 def ministry(ministry_id: str) -> dict | None:

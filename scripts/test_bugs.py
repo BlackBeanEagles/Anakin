@@ -265,6 +265,48 @@ def main() -> int:
 
     L.extract_facts, L.route_case, L.ask_citizen = orig_extract, orig_route, orig_ask
 
+    # ---------------------------------------------------------------------
+    # Shipped bug, found by the 52-case eval: the router returned ministry "MOPP"
+    # - a plausible-looking code for the pension department that is not in the
+    # taxonomy - while getting the category (DPPW-LC) exactly right. Nothing
+    # validated it, so the case would have looked up an officer for a ministry that
+    # does not exist, found none, and silently lost its email rung.
+    from app.agent.route import repair
+
+    r = repair({"out_of_scope": False, "ministry_id": "MOPP",
+                "ministry_name": "Ministry of Pension", "category_id": "DPPW-LC",
+                "category_name": "Life cert", "confidence": 0.95})
+    check("an invented ministry is recovered from its category",
+          r["ministry_id"] == "DPPW", r["ministry_id"])
+    check("the recovered ministry gets its real name",
+          r["ministry_name"].startswith("Department of Pension"), r["ministry_name"])
+    check("the repair is recorded, not silent", bool(r.get("repaired")))
+
+    r = repair({"out_of_scope": False, "ministry_id": "DOPOS", "ministry_name": "x",
+                "category_id": "MOR-REFUND", "category_name": "y", "confidence": 0.9})
+    check("a category from another ministry is dropped, not guessed at",
+          r["category_id"] == "" and r["ministry_id"] == "DOPOS",
+          f"{r['ministry_id']}/{r['category_id']}")
+
+    r = repair({"out_of_scope": False, "ministry_id": "NOPE", "ministry_name": "x",
+                "category_id": "ALSO-NOPE", "category_name": "y", "confidence": 0.95})
+    check("an unrecoverable route is emptied and loses its confidence",
+          r["ministry_id"] == "" and r["confidence"] <= 0.3,
+          f"{r['ministry_id']!r} conf={r['confidence']}")
+
+    r = repair({"out_of_scope": True, "ministry_id": "MOR", "ministry_name": "x",
+                "category_id": "MOR-REFUND", "category_name": "y", "confidence": 0.9})
+    check("an out-of-scope route carries no ministry or category",
+          r["ministry_id"] == "" and r["category_id"] == "")
+
+    # A paraphrased department name must never reach a letterhead.
+    r = repair({"out_of_scope": False, "ministry_id": "MOR",
+                "ministry_name": "Indian Railways Ministry Dept", "category_id": "MOR-REFUND",
+                "category_name": "refunds and stuff", "confidence": 0.9})
+    check("names are overwritten from the taxonomy, not trusted",
+          "Railway" in r["ministry_name"] and r["category_name"] != "refunds and stuff",
+          f"{r['ministry_name']} / {r['category_name']}")
+
     failed = [r for r in results if not r[1]]
     print(f"\n{len(results) - len(failed)}/{len(results)} passed\n")
     return 1 if failed else 0
