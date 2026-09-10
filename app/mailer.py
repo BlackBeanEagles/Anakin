@@ -1,8 +1,18 @@
 """The one rail that actually leaves this machine.
 
-DRY_RUN defaults to true: emails are written to outbox/ as .eml-ish text files and
-nothing is transmitted. Flip DRY_RUN=false in .env only when you intend to contact
-real departments on behalf of real people.
+Three states, not two, because the middle one is the whole difference between
+testing this and misusing it:
+
+  DRY_RUN=true              nothing transmitted; written to outbox/ as text.
+  MAIL_REDIRECT_TO=<addr>   really sent over SMTP, but to that address instead of
+                            the department, with the intended recipient preserved
+                            in the subject and an X-Persist-Intended-To header.
+  neither set               sent to the department for real.
+
+The redirect exists because proving the rail works and mailing a fabricated
+grievance to a named Executive Director are one environment variable apart. Use it
+for every test. Turn it off only when a real grievance from a real person, with
+real reference numbers, is ready to go.
 """
 import logging
 import smtplib
@@ -31,11 +41,40 @@ def send(to: str, subject: str, body: str, case_id: str, cc: str = "") -> tuple[
         reason = "DRY_RUN is on" if settings.dry_run else "no SMTP host configured"
         return False, f"Not sent ({reason}). Written to {path.name}"
 
+    # A real send, but not necessarily to the department. The redirect exists so the
+    # send rail can be proven end to end without a fictional grievance reaching a
+    # real officer - the message genuinely leaves over SMTP and genuinely arrives,
+    # it just arrives somewhere accountable.
+    redirected = bool(settings.mail_redirect_to)
+    envelope_to = settings.mail_redirect_to if redirected else to
+    envelope_cc = "" if redirected else cc
+
+    if redirected:
+        subject = f"[TEST -> {to}] {subject}"
+        banner = [
+            "*** REDIRECTED TEST MESSAGE ***",
+            f"This would have been sent to: {to}",
+        ]
+        if cc:
+            banner.append(f"Cc would have been: {cc}")
+        banner += [
+            "MAIL_REDIRECT_TO is set, so it came here instead.",
+            "No department has received this.",
+            "=" * 60,
+            "",
+            "",
+        ]
+        full = "\n".join(banner) + full
+
     msg = EmailMessage()
     msg["From"] = settings.smtp_from or settings.smtp_user
-    msg["To"] = to
-    if cc:
-        msg["Cc"] = cc
+    msg["To"] = envelope_to
+    if envelope_cc:
+        msg["Cc"] = envelope_cc
+    if redirected:
+        # Kept as a header too, so the routing decision is verifiable from the raw
+        # message rather than only from a subject line a human might reformat.
+        msg["X-Persist-Intended-To"] = to
     msg["Subject"] = subject
     msg.set_content(full)
 
@@ -49,6 +88,11 @@ def send(to: str, subject: str, body: str, case_id: str, cc: str = "") -> tuple[
         log.exception("smtp send failed")
         return False, f"SMTP send failed: {exc}"
 
+    # The ledger must never claim a department was contacted when it was not. This
+    # string ends up on the public case timeline, so it says exactly what happened.
+    if redirected:
+        return True, (f"Sent to {settings.mail_redirect_to} as a redirected test "
+                      f"(intended recipient: {to}). The department was NOT contacted.")
     return True, f"Sent to {to}"
 
 

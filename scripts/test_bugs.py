@@ -307,6 +307,63 @@ def main() -> int:
           "Railway" in r["ministry_name"] and r["category_name"] != "refunds and stuff",
           f"{r['ministry_name']} / {r['category_name']}")
 
+    # ---------------------------------------------------------------------
+    # The redirect rail. The demo cases are fictional and the taxonomy points at
+    # real named officers, so the gap between "prove the send works" and "mail a
+    # fabricated grievance to an Executive Director" is one env var. These guard
+    # that the redirect actually redirects, and - just as important - that the
+    # ledger never claims a department was contacted when it was not.
+    import app.mailer as mailer
+
+    sent_msgs = []
+
+    class _FakeSMTP:
+        def __init__(self, *a, **k): pass
+        def __enter__(self): return self
+        def __exit__(self, *a): return False
+        def starttls(self): pass
+        def login(self, *a): pass
+        def send_message(self, msg): sent_msgs.append(msg)
+
+    real_smtp, real_dry = mailer.smtplib.SMTP, settings.dry_run
+    real_host, real_redirect = settings.smtp_host, settings.mail_redirect_to
+    mailer.smtplib.SMTP = _FakeSMTP
+    settings.dry_run = False
+    settings.smtp_host = "smtp.test"
+
+    try:
+        settings.mail_redirect_to = "me@mine.test"
+        ok, detail = mailer.send("edpg@rb.railnet.gov.in", "Appeal", "Body", "PST-TEST")
+        m = sent_msgs[-1]
+        check("a redirected send actually sends", ok is True)
+        check("the envelope goes to the redirect address, not the officer",
+              m["To"] == "me@mine.test", m["To"])
+        check("the intended recipient survives in a header",
+              m["X-Persist-Intended-To"] == "edpg@rb.railnet.gov.in")
+        check("the subject says it is a test and names the real target",
+              "TEST" in m["Subject"] and "rb.railnet.gov.in" in m["Subject"], m["Subject"])
+        check("the body warns nobody was contacted",
+              "REDIRECTED" in m.get_content() and "NOT" in detail.upper())
+        check("the ledger line does not claim the department was contacted",
+              "edpg@rb.railnet.gov.in" not in detail.split("intended recipient")[0],
+              detail)
+
+        settings.mail_redirect_to = ""
+        ok, detail = mailer.send("edpg@rb.railnet.gov.in", "Appeal", "Body", "PST-TEST")
+        m = sent_msgs[-1]
+        check("with the redirect off, mail goes to the department",
+              m["To"] == "edpg@rb.railnet.gov.in" and "X-Persist-Intended-To" not in m)
+        check("an un-redirected send says so plainly",
+              detail == "Sent to edpg@rb.railnet.gov.in", detail)
+
+        settings.dry_run = True
+        ok, detail = mailer.send("edpg@rb.railnet.gov.in", "Appeal", "Body", "PST-TEST")
+        check("DRY_RUN still beats everything", ok is False and "Not sent" in detail)
+    finally:
+        mailer.smtplib.SMTP = real_smtp
+        settings.dry_run, settings.smtp_host = real_dry, real_host
+        settings.mail_redirect_to = real_redirect
+
     failed = [r for r in results if not r[1]]
     print(f"\n{len(results) - len(failed)}/{len(results)} passed\n")
     return 1 if failed else 0

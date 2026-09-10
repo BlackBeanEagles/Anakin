@@ -46,6 +46,15 @@ class Settings:
     smtp_password = os.getenv("SMTP_PASSWORD", "")
     smtp_from = os.getenv("SMTP_FROM", "")
 
+    # Every outbound email goes here instead of the department, with the intended
+    # recipient preserved in the subject and headers. This exists because the gap
+    # between "the send rail works" and "a real Director received a test" is one
+    # environment variable, and the demo cases are fictional - firing them at
+    # rb.railnet.gov.in would be a false complaint with invented reference numbers.
+    # Set it to your own address to prove the rail end to end; unset it only when a
+    # real grievance from a real person is ready to go.
+    mail_redirect_to = os.getenv("MAIL_REDIRECT_TO", "").strip()
+
     # ---- inbound email (department replies land here) ----
     imap_host = os.getenv("IMAP_HOST", "")
     imap_port = int(os.getenv("IMAP_PORT", "993") or 993)
