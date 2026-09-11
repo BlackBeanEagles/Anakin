@@ -36,10 +36,24 @@ def send(to: str, subject: str, body: str, case_id: str, cc: str = "") -> tuple[
     )
     full = body + footer
 
-    if settings.dry_run or not settings.smtp_host:
+    if settings.dry_run or not settings.smtp_host or not settings.smtp_password:
         path = _to_outbox(to, cc, subject, full, case_id)
-        reason = "DRY_RUN is on" if settings.dry_run else "no SMTP host configured"
-        return False, f"Not sent ({reason}). Written to {path.name}"
+        if settings.dry_run:
+            operator = "DRY_RUN is on"
+        elif not settings.smtp_host:
+            operator = "no SMTP host configured"
+        else:
+            # The half-configured case: a host is set but the password was never
+            # pasted in. Without this the send attempt reaches smtplib, fails the
+            # login, and logs a stack-flavoured error on every single rung.
+            operator = f"SMTP_PASSWORD is empty for {settings.smtp_user or 'the SMTP user'}"
+
+        # The returned string lands on the public case timeline, so it has to read
+        # like a record rather than a config dump. An outbox filename and the name of
+        # an environment variable are facts about this machine, not about the
+        # grievance - they go to the operator's log instead.
+        log.info("not sent (%s) — written to %s", operator, path.name)
+        return False, "Prepared and recorded. Not transmitted — demonstration mode."
 
     # A real send, but not necessarily to the department. The redirect exists so the
     # send rail can be proven end to end without a fictional grievance reaching a

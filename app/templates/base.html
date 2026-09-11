@@ -32,31 +32,53 @@
       <a href="/scoreboard">Scoreboard</a>
       <a href="/toolbox">Toolbox</a>
       <a href="/file">File one</a>
+      {# Operator tools only appear to an operator. A visitor has no use for a
+         sourcing kit or a login link, and both read as unfinished scaffolding on
+         what is otherwise a public record. #}
+      {% if request.state.authed %}
+      <a href="/share">Sourcing</a>
       <a href="/console">Console</a>
+      {% endif %}
     </nav>
   </div>
 </header>
 
 <main class="wrap">
-  {% if settings.mock_llm %}
-  <div class="banner err">
-    <strong>Mock mode.</strong> The model is stubbed out — routing and drafts are canned
-    keyword responses, not real reasoning. Set <code>LLM_PROVIDER=groq</code> (free key at
-    <a href="https://console.groq.com/keys">console.groq.com/keys</a>) before demoing anything.
-  </div>
-  {% elif settings.key_missing %}
-  <div class="banner err">
-    <strong>No API key.</strong> <code>LLM_PROVIDER={{ settings.provider.key }}</code> is
-    selected but <code>{{ settings.provider.api_key_env }}</code> is empty. Get a key at
-    <a href="{{ settings.provider.console_url }}">{{ settings.provider.console_url }}</a>.
-  </div>
-  {% endif %}
-  {% if settings.dry_run %}
-  <div class="banner dry">
-    <strong>Dry run.</strong> Nothing is being transmitted. Drafted correspondence is written to
-    <code>outbox/</code> instead of being sent. Set <code>DRY_RUN=false</code> in <code>.env</code>
-    when you are ready to contact real departments.
-  </div>
+  {# Configuration notices are for the operator. A citizen filing a complaint has no
+     use for an env-var name, and a public page that prints one reads as unfinished. #}
+  {% if request.state.authed %}
+    {% if settings.mock_llm %}
+    <div class="banner err">
+      <strong>Mock mode.</strong> The model is stubbed out — routing and drafts are canned
+      keyword responses, not real reasoning. Set <code>LLM_PROVIDER=groq</code> (free key at
+      <a href="https://console.groq.com/keys">console.groq.com/keys</a>) before demoing anything.
+    </div>
+    {% elif settings.key_missing %}
+    <div class="banner err">
+      <strong>No API key.</strong> <code>LLM_PROVIDER={{ settings.provider.key }}</code> is
+      selected but <code>{{ settings.provider.api_key_env }}</code> is empty. Get a key at
+      <a href="{{ settings.provider.console_url }}">{{ settings.provider.console_url }}</a>.
+    </div>
+    {% endif %}
+    {% if settings.dry_run %}
+    <div class="banner dry">
+      <strong>Dry run.</strong> Nothing is transmitted; correspondence is written to
+      <code>outbox/</code>. Set <code>DRY_RUN=false</code> in <code>.env</code> to contact
+      real departments.
+    </div>
+    {% elif settings.mail_redirect_to %}
+    <div class="banner dry">
+      <strong>Mail redirected.</strong> Correspondence is really being sent, but to
+      <code>{{ settings.mail_redirect_to }}</code> rather than to departments.
+    </div>
+    {% endif %}
+  {% elif settings.dry_run or settings.mail_redirect_to %}
+  {# The public version states the fact and nothing else. Removing it entirely would
+     let the ledger imply letters were sent when they were not. #}
+  <p class="notice">
+    Demonstration mode — correspondence shown here is prepared and recorded, but not
+    transmitted to departments.
+  </p>
   {% endif %}
 
   {% block body %}{% endblock %}

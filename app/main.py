@@ -105,6 +105,19 @@ templates = Jinja2Templates(directory=str(ROOT / "app" / "templates"))
 templates.env.globals["base_url"] = settings.public_base_url.rstrip("/")
 templates.env.globals["settings"] = settings
 templates.env.globals["RUNGS"] = ladder.RUNGS
+
+
+@app.middleware("http")
+async def _operator_flag(request: Request, call_next):
+    """Let every template know whether an operator is looking.
+
+    Configuration notices - mock mode, a missing key, which .env line to edit - are
+    for whoever runs this, not for a citizen who came to file a complaint. They were
+    rendering on every public page, which is how a product ends up telling visitors
+    about its own environment variables.
+    """
+    request.state.authed = _authed(request.cookies.get("session"))
+    return await call_next(request)
 templates.env.filters["fromjson"] = lambda raw: db.jload(raw, {})
 
 

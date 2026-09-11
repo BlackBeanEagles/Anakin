@@ -327,9 +327,13 @@ def main() -> int:
 
     real_smtp, real_dry = mailer.smtplib.SMTP, settings.dry_run
     real_host, real_redirect = settings.smtp_host, settings.mail_redirect_to
+    real_pw = settings.smtp_password
     mailer.smtplib.SMTP = _FakeSMTP
     settings.dry_run = False
     settings.smtp_host = "smtp.test"
+    # A host without a password is now treated as half-configured and written to the
+    # outbox instead of attempted, so a send test has to supply both.
+    settings.smtp_password = "app-password"
 
     try:
         settings.mail_redirect_to = "me@mine.test"
@@ -358,11 +362,22 @@ def main() -> int:
 
         settings.dry_run = True
         ok, detail = mailer.send("edpg@rb.railnet.gov.in", "Appeal", "Body", "PST-TEST")
-        check("DRY_RUN still beats everything", ok is False and "Not sent" in detail)
+        check("DRY_RUN still beats everything",
+              ok is False and "Not transmitted" in detail, detail)
+
+        # Half-configured: a host pasted in but the password never filled. Without
+        # this the send reaches smtplib and fails the login on every single rung.
+        settings.dry_run, settings.smtp_password = False, ""
+        ok, detail = mailer.send("edpg@rb.railnet.gov.in", "Appeal", "Body", "PST-TEST")
+        check("a missing SMTP password does not reach smtplib",
+              ok is False and "Not transmitted" in detail, detail)
+        # ...and the public timeline never learns the name of an env var or a file.
+        check("the ledger line carries no configuration detail",
+              "SMTP_PASSWORD" not in detail and ".txt" not in detail, detail)
     finally:
         mailer.smtplib.SMTP = real_smtp
         settings.dry_run, settings.smtp_host = real_dry, real_host
-        settings.mail_redirect_to = real_redirect
+        settings.mail_redirect_to, settings.smtp_password = real_redirect, real_pw
 
     # ---------------------------------------------------------------------
     # Auto-approval. The hackathon brief asks for an agent that acts "without a

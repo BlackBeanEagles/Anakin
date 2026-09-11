@@ -37,6 +37,11 @@ def approve_all_pending() -> int:
 
 
 def main() -> int:
+    # This walk exercises the human-approval path: queue, approve, reject, redraft.
+    # Auto-approval is a different path and is tested in test_bugs, so pin it off
+    # here rather than letting whatever is in .env decide what this walk measures.
+    settings.auto_approve_through_rung = -1
+
     if settings.provider.kind != "mock":
         print("Run this with LLM_PROVIDER=mock — it makes many calls.")
         return 2

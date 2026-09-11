@@ -511,3 +511,13 @@ td.num, th.num { text-align: right; font-variant-numeric: tabular-nums lining-nu
 
 /* A dash is the honest rendering of "nothing here", and it should recede. */
 td .none { color: var(--ink-4); }
+
+/* A statement of fact for a visitor, where the operator gets a banner with the
+   env-var name in it. Quiet on purpose: this is a footnote to the page, not a
+   warning about it. */
+.notice {
+  margin: 0 0 26px; padding: 10px 14px;
+  border-left: 2px solid var(--edge);
+  color: var(--ink-3); font-size: 13px; line-height: 1.5;
+  background: var(--paper-2); border-radius: 0 6px 6px 0;
+}
