@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
 from email.utils import formataddr
 
-from . import db, notify, watch, web
+from . import db, dispatch, notify, watch, web
 from .agent import (
     draft_appeal,
     draft_call_script,
@@ -163,17 +163,18 @@ def prepare(case: dict) -> None:
                    amount_claimed=facts["amount_inr"] or case["amount_claimed"])
 
     m = get_ministry(routing["ministry_id"]) or {}
-    db.create_action(
+    action_id = db.create_action(
         cid, rung=1, channel="portal", kind="packet",
         recipient=f"{routing['ministry_name']} / {routing['category_name']}",
         subject=draft["subject"], content=draft["body"],
         status="pending_approval",
     )
-    db.update_case(cid, status="awaiting_approval", next_action_at=None)
     db.log_event(cid, "draft",
                  f"Grievance drafted ({draft['word_count']} words). Ask: {draft['the_ask']}. "
-                 f"Awaiting human approval before it goes to the citizen. "
                  f"Helpline on file: {m.get('helpline') or 'n/a'}")
+    # The agent takes this itself when it is allowed to; otherwise it queues and
+    # says why. Either way the case does not stall silently.
+    dispatch.offer(db.get_case(cid), action_id, routing)
 
 
 # --------------------------------------------------------------- rung 2+
@@ -230,13 +231,14 @@ def climb(case: dict) -> None:
     waited = _days_pending(case)
     d, recipient = _draft_for(case, facts, routing, nxt)
 
-    db.create_action(cid, rung=nxt.n, channel=nxt.channel, kind=nxt.kind,
-                     recipient=recipient, subject=d["subject"], content=d["body"],
-                     status="pending_approval")
-    db.update_case(cid, rung=nxt.n, status="awaiting_approval", next_action_at=None)
+    action_id = db.create_action(cid, rung=nxt.n, channel=nxt.channel, kind=nxt.kind,
+                                 recipient=recipient, subject=d["subject"],
+                                 content=d["body"], status="pending_approval")
+    db.update_case(cid, rung=nxt.n)
     db.log_event(cid, "escalate",
                  f"No adequate response after {waited} days. Climbing to rung {nxt.n}: "
-                 f"{nxt.label}. Drafted and queued for approval.")
+                 f"{nxt.label}.")
+    dispatch.offer(db.get_case(cid), action_id, routing)
     notify.citizen(cid, "escalated", rung_label=nxt.label,
                    reason=f"no adequate response after {waited} days")
 
@@ -367,6 +369,8 @@ def redraft(case_id: str, rung_n: int) -> None:
     db.log_event(case_id, "redraft",
                  f"Rung {r.n} ({r.label}) redrafted after human rejection. "
                  f"Queued for approval again.")
+    # Deliberately not offered to the agent. A person has just rejected this rung;
+    # auto-sending the retry would be the agent overruling them.
 
 
 def _last_response(case_id: str) -> str | None:

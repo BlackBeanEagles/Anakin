@@ -55,6 +55,18 @@ class Settings:
     # real grievance from a real person is ready to go.
     mail_redirect_to = os.getenv("MAIL_REDIRECT_TO", "").strip()
 
+    # How far up the ladder the agent may act without a human clicking. Rungs 0-2 are
+    # the ordinary machinery of a grievance; 3+ are appeals naming senior officials.
+    # -1 disables auto-approval entirely.
+    #
+    # This is NOT the thing that protects real officials from an autonomous send -
+    # dispatch.reaches_a_real_recipient() does that, and it has no off switch. This
+    # only decides how much of the ladder the agent drives while mail is redirected
+    # or dry.
+    auto_approve_through_rung = int(os.getenv("AUTO_APPROVE_THROUGH_RUNG", "-1") or -1)
+    auto_approve_min_confidence = float(
+        os.getenv("AUTO_APPROVE_MIN_CONFIDENCE", "0.75") or 0.75)
+
     # ---- inbound email (department replies land here) ----
     imap_host = os.getenv("IMAP_HOST", "")
     imap_port = int(os.getenv("IMAP_PORT", "993") or 993)

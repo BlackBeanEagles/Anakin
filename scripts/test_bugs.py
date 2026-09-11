@@ -364,6 +364,78 @@ def main() -> int:
         settings.dry_run, settings.smtp_host = real_dry, real_host
         settings.mail_redirect_to = real_redirect
 
+    # ---------------------------------------------------------------------
+    # Auto-approval. The hackathon brief asks for an agent that acts "without a
+    # human clicking every button", and every rung used to wait for a click. These
+    # guard the line between useful autonomy and mailing a fabricated grievance to a
+    # named Executive Director.
+    from app import dispatch
+
+    real = dict(dry=settings.dry_run, host=settings.smtp_host,
+                redirect=settings.mail_redirect_to,
+                rung=settings.auto_approve_through_rung,
+                conf=settings.auto_approve_min_confidence)
+    try:
+        settings.auto_approve_through_rung = 2
+        settings.auto_approve_min_confidence = 0.75
+        good = {"confidence": 0.95}
+        email2 = {"rung": 2, "channel": "email", "recipient": "x@ministry.gov.in"}
+
+        # The hard gate: live SMTP, no redirect, DRY_RUN off = a real department.
+        settings.dry_run, settings.smtp_host, settings.mail_redirect_to = (
+            False, "smtp.test", "")
+        ok, why = dispatch.may_auto_approve({}, email2, good)
+        check("the agent will not autonomously mail a real department",
+              ok is False and "real department" in why, why)
+
+        # ...and no setting can turn that gate off.
+        settings.auto_approve_through_rung = 99
+        ok, _ = dispatch.may_auto_approve({}, email2, good)
+        check("no rung setting overrides the real-recipient gate", ok is False)
+        settings.auto_approve_through_rung = 2
+
+        # With mail redirected, the same action is allowed - that is the point.
+        settings.mail_redirect_to = "me@mine.test"
+        ok, why = dispatch.may_auto_approve({}, email2, good)
+        check("with mail redirected, the agent may act on its own", ok is True, why)
+
+        # Rung ceiling: appeals and above stay human even while redirected.
+        ok, why = dispatch.may_auto_approve(
+            {}, {"rung": 3, "channel": "email", "recipient": "x@y.gov.in"}, good)
+        check("an appeal is never auto-approved", ok is False and "appeal" in why, why)
+
+        # Confidence floor.
+        ok, why = dispatch.may_auto_approve({}, email2, {"confidence": 0.4})
+        check("a low-confidence route waits for a human",
+              ok is False and "confidence" in why, why)
+
+        # A blank address must not be auto-sent - this silently misrouted before.
+        ok, why = dispatch.may_auto_approve(
+            {}, {"rung": 2, "channel": "email", "recipient": "Department of Posts"}, good)
+        check("a department name is not an address", ok is False and "address" in why, why)
+
+        # Phone always needs a person.
+        ok, why = dispatch.may_auto_approve(
+            {}, {"rung": 2, "channel": "phone", "recipient": "1924"}, good)
+        check("nobody auto-places a phone call", ok is False, why)
+
+        # Off switch.
+        settings.auto_approve_through_rung = -1
+        ok, why = dispatch.may_auto_approve({}, email2, good)
+        check("auto-approval is off by default and can be switched off",
+              ok is False and "switched off" in why, why)
+
+        # DRY_RUN alone is enough to make the gate pass.
+        settings.auto_approve_through_rung = 2
+        settings.dry_run, settings.mail_redirect_to = True, ""
+        ok, why = dispatch.may_auto_approve({}, email2, good)
+        check("under DRY_RUN the agent may drive the ladder", ok is True, why)
+    finally:
+        settings.dry_run, settings.smtp_host = real["dry"], real["host"]
+        settings.mail_redirect_to = real["redirect"]
+        settings.auto_approve_through_rung = real["rung"]
+        settings.auto_approve_min_confidence = real["conf"]
+
     failed = [r for r in results if not r[1]]
     print(f"\n{len(results) - len(failed)}/{len(results)} passed\n")
     return 1 if failed else 0

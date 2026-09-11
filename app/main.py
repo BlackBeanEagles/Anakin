@@ -18,7 +18,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import db, inbox, ladder, mailer, watch, web, whatsapp
+from . import db, dispatch, inbox, ladder, mailer, watch, web, whatsapp
 from .config import ROOT, settings
 
 logging.basicConfig(
@@ -253,16 +253,9 @@ TAXONOMY_SOURCE = "https://pgportal.gov.in/Home/NodalPgOfficers"
 
 
 def _sendable(address: str | None) -> bool:
-    """Is this a real address we are willing to put a citizen's grievance behind?
-
-    Guards the two ways a bad address gets here: an empty one, and a placeholder
-    left in the taxonomy. Sending to either would be worse than refusing — one
-    bounces, the other reaches a stranger.
-    """
-    a = (address or "").strip()
-    if not a or "@" not in a or a.startswith("@") or a.endswith("@"):
-        return False
-    return not any(bad in a.upper() for bad in ("VERIFY-ME", "EXAMPLE.COM", "CHANGEME", "TODO"))
+    """Kept as a name for the templates and older call sites; the rule lives in
+    dispatch, so the console and the agent cannot drift apart on what is sendable."""
+    return dispatch.sendable(address)
 
 
 @app.get("/share", response_class=HTMLResponse)
@@ -403,67 +396,11 @@ def approve(action_id: int, session: str | None = Cookie(None)):
     if not action or action["status"] != "pending_approval":
         return RedirectResponse("/console", status_code=303)
 
-    cid = action["case_id"]
-    case = db.get_case(cid)
-    db.update_action(action_id, status="approved", approved_at=db.now())
-
-    channel = action["channel"]
-    r = ladder.rung(action["rung"])
-
-    if channel == "email":
-        # An email with no address must NOT fall through to another branch. It used
-        # to, and got logged as "call script approved" — a silent misroute whenever a
-        # ministry had no grievance-officer address on file.
-        if not _sendable(action["recipient"]):
-            db.update_action(action_id, status="pending_approval", approved_at=None)
-            db.log_event(cid, "error",
-                         f"Cannot send rung {action['rung']}: no usable address "
-                         f"({action['recipient'] or 'blank'}). Set grievance_officer_email "
-                         f"in taxonomy.json from {TAXONOMY_SOURCE}, then approve again.")
-            return RedirectResponse("/console", status_code=303)
-
-        sent, detail = mailer.send(
-            to=action["recipient"], subject=action["subject"],
-            body=action["content"], case_id=cid, cc=case["citizen_email"],
-        )
-        db.update_action(action_id, status="sent", sent_at=db.now())
-        db.log_event(cid, "sent", f"Rung {action['rung']} email approved and dispatched. {detail}")
-        db.update_case(cid, status="awaiting_response", next_action_at=ladder.wait_until(r.wait_days))
-
-    elif channel == "portal":
-        # The packet goes to the citizen; they perform the one credentialed keystroke.
-        if case["citizen_email"]:
-            sent, detail = mailer.send(
-                to=case["citizen_email"],
-                subject=f"[{cid}] Your grievance is ready to submit",
-                body=(
-                    f"Dear {case['citizen_name']},\n\n"
-                    f"Your grievance has been prepared and routed to:\n"
-                    f"  {action['recipient']}\n\n"
-                    f"Submit it at {settings.portal_url} using your own account, then reply to this\n"
-                    f"email with the registration number. From that point we take over: tracking,\n"
-                    f"chasing, and escalating without any further action from you.\n\n"
-                    f"{'=' * 60}\n{action['content']}\n{'=' * 60}\n"
-                ),
-                case_id=cid,
-            )
-        else:
-            # WhatsApp-only case: there is no address to email the packet to.
-            detail = "No email on file — deliver the packet over WhatsApp."
-        db.update_action(action_id, status="sent", sent_at=db.now())
-        db.log_event(cid, "packet",
-                     f"Packet approved for the citizen's one credentialed submission step. {detail}")
-        db.update_case(cid, status="awaiting_submission", next_action_at=None)
-
-    elif channel == "phone":
-        db.update_action(action_id, status="sent", sent_at=db.now())
-        db.log_event(cid, "call", "Call script approved. Place the call, then log the outcome.")
-        db.update_case(cid, status="awaiting_response", next_action_at=ladder.wait_until(r.wait_days))
-
-    else:
-        db.update_action(action_id, status="pending_approval", approved_at=None)
-        db.log_event(cid, "error", f"Unknown channel '{channel}' — not sent.")
-
+    # One dispatch path, shared with the agent's auto-approval. Duplicating it here
+    # is how the two drift: the address check that stops a blank recipient being
+    # logged as a phone call existed in this handler only, so anything the agent
+    # sent would have skipped it.
+    dispatch.send_action(action_id, by="human")
     return RedirectResponse("/console", status_code=303)
 
 
