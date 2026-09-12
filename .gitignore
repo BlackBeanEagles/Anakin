@@ -9,3 +9,4 @@ outbox/
 .DS_Store
 webcache/
 .env.production
+northflank-env.txt
