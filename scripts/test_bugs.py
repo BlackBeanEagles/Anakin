@@ -509,6 +509,56 @@ def main() -> int:
     finally:
         settings.time_scale = real_scale
 
+    # ---------------------------------------------------------------------
+    # The deployed instance could not send at all: Render's free tier blocks
+    # outbound ports 25/465/587, so SMTP failed with "Network is unreachable"
+    # while the identical credentials worked from a laptop. The HTTP rail goes
+    # over 443 instead - but only if the outbox guard knows it counts as a
+    # transport, which it did not.
+    real = dict(host=settings.smtp_host, pw=settings.smtp_password,
+                dry=settings.dry_run, key=settings.resend_api_key,
+                redirect=settings.mail_redirect_to)
+    sent_http = []
+
+    class _Resp:
+        status_code = 200
+        text = "{}"
+
+    original_post = mailer.httpx.post
+    try:
+        settings.smtp_host = settings.smtp_password = ""
+        settings.dry_run = False
+        settings.resend_api_key = "re_test"
+        settings.mail_redirect_to = "me@mine.test"
+        mailer.httpx.post = lambda *a, **k: (sent_http.append(k.get("json")), _Resp())[1]
+
+        ok, detail = mailer.send("edpg@rb.railnet.gov.in", "Appeal", "Body", "PST-X")
+        check("an HTTP key alone is a working transport", ok is True, detail)
+        check("the HTTP send still honours the redirect",
+              sent_http and sent_http[-1]["to"] == ["me@mine.test"],
+              str(sent_http[-1]["to"] if sent_http else None))
+        check("the HTTP send still names the real target in the subject",
+              "rb.railnet.gov.in" in sent_http[-1]["subject"])
+
+        # DRY_RUN must still win over a configured HTTP rail.
+        sent_http.clear()
+        settings.dry_run = True
+        ok, detail = mailer.send("edpg@rb.railnet.gov.in", "Appeal", "Body", "PST-X")
+        check("DRY_RUN beats the HTTP rail too",
+              ok is False and not sent_http and "Not transmitted" in detail, detail)
+
+        # No transport at all is still the outbox, and says so without naming env vars.
+        settings.dry_run = False
+        settings.resend_api_key = ""
+        ok, detail = mailer.send("edpg@rb.railnet.gov.in", "Appeal", "Body", "PST-X")
+        check("no transport configured falls back to the outbox",
+              ok is False and "Not transmitted" in detail, detail)
+    finally:
+        mailer.httpx.post = original_post
+        settings.smtp_host, settings.smtp_password = real["host"], real["pw"]
+        settings.dry_run, settings.resend_api_key = real["dry"], real["key"]
+        settings.mail_redirect_to = real["redirect"]
+
     failed = [r for r in results if not r[1]]
     print(f"\n{len(results) - len(failed)}/{len(results)} passed\n")
     return 1 if failed else 0

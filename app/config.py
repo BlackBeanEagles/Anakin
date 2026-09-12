@@ -55,6 +55,13 @@ class Settings:
     # real grievance from a real person is ready to go.
     mail_redirect_to = os.getenv("MAIL_REDIRECT_TO", "").strip()
 
+    # Most PaaS free tiers block outbound SMTP ports to stop spam, so mail from a
+    # deployed instance fails with "Network is unreachable" while the identical
+    # credentials work from a laptop. An HTTP mail API goes over 443 instead.
+    # Set this and SMTP is not used at all.
+    resend_api_key = os.getenv("RESEND_API_KEY", "").strip()
+    mail_from_http = os.getenv("MAIL_FROM_HTTP", "onboarding@resend.dev").strip()
+
     # How far up the ladder the agent may act without a human clicking. Rungs 0-2 are
     # the ordinary machinery of a grievance; 3+ are appeals naming senior officials.
     # -1 disables auto-approval entirely.

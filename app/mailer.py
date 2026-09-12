@@ -4,7 +4,7 @@ Three states, not two, because the middle one is the whole difference between
 testing this and misusing it:
 
   DRY_RUN=true              nothing transmitted; written to outbox/ as text.
-  MAIL_REDIRECT_TO=<addr>   really sent over SMTP, but to that address instead of
+  MAIL_REDIRECT_TO=<addr>   really sent, but to that address instead of
                             the department, with the intended recipient preserved
                             in the subject and an X-Persist-Intended-To header.
   neither set               sent to the department for real.
@@ -17,7 +17,10 @@ real reference numbers, is ready to go.
 import logging
 import smtplib
 from email.message import EmailMessage
+
 from pathlib import Path
+
+import httpx
 
 from .config import settings
 from .db import now
@@ -36,12 +39,18 @@ def send(to: str, subject: str, body: str, case_id: str, cc: str = "") -> tuple[
     )
     full = body + footer
 
-    if settings.dry_run or not settings.smtp_host or not settings.smtp_password:
+    # A transport exists if EITHER rail is configured. Checking only the SMTP pair
+    # here meant a host with just RESEND_API_KEY set - the whole point of the HTTP
+    # rail - silently wrote to the outbox and reported "demonstration mode".
+    has_http = bool(settings.resend_api_key)
+    has_smtp = bool(settings.smtp_host and settings.smtp_password)
+
+    if settings.dry_run or not (has_http or has_smtp):
         path = _to_outbox(to, cc, subject, full, case_id)
         if settings.dry_run:
             operator = "DRY_RUN is on"
-        elif not settings.smtp_host:
-            operator = "no SMTP host configured"
+        elif not (settings.smtp_host or settings.resend_api_key):
+            operator = "no mail transport configured"
         else:
             # The half-configured case: a host is set but the password was never
             # pasted in. Without this the send attempt reaches smtplib, fails the
@@ -92,15 +101,9 @@ def send(to: str, subject: str, body: str, case_id: str, cc: str = "") -> tuple[
     msg["Subject"] = subject
     msg.set_content(full)
 
-    try:
-        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as s:
-            s.starttls()
-            if settings.smtp_user:
-                s.login(settings.smtp_user, settings.smtp_password)
-            s.send_message(msg)
-    except Exception as exc:  # noqa: BLE001 - surfaced to the operator, not swallowed
-        log.exception("smtp send failed")
-        return False, f"SMTP send failed: {exc}"
+    ok, why = _transmit(msg, envelope_to, subject, full)
+    if not ok:
+        return False, why
 
     # The ledger must never claim a department was contacted when it was not. This
     # string ends up on the public case timeline, so it says exactly what happened.
@@ -108,6 +111,59 @@ def send(to: str, subject: str, body: str, case_id: str, cc: str = "") -> tuple[
         return True, (f"Sent to {settings.mail_redirect_to} as a redirected test "
                       f"(intended recipient: {to}). The department was NOT contacted.")
     return True, f"Sent to {to}"
+
+
+def _transmit(msg: EmailMessage, to: str, subject: str, body: str) -> tuple[bool, str]:
+    """Hand the message to whichever transport this host actually allows.
+
+    Render's free tier - and most PaaS free tiers - block outbound ports 25, 465 and
+    587 to stop spam, so an SMTP send from the deployed instance fails with
+    "Network is unreachable" no matter how correct the credentials are. The same
+    credentials work perfectly from a laptop, which makes it a confusing failure to
+    debug in production.
+
+    So HTTP first when an API key is present: it goes over 443, which nobody blocks.
+    SMTP stays as the fallback, because it needs no third party and works fine
+    anywhere outbound mail ports are open.
+    """
+    if settings.resend_api_key:
+        try:
+            r = httpx.post(
+                "https://api.resend.com/emails",
+                headers={"Authorization": f"Bearer {settings.resend_api_key}",
+                         "Content-Type": "application/json"},
+                json={"from": settings.mail_from_http or msg["From"],
+                      "to": [to], "subject": subject, "text": body},
+                timeout=30.0,
+            )
+        except httpx.HTTPError as exc:
+            log.warning("http mail transport failed: %s", exc)
+            return False, f"Mail API unreachable: {exc}"
+        if r.status_code >= 400:
+            log.warning("http mail rejected: %s %s", r.status_code, r.text[:200])
+            return False, f"Mail API rejected the message ({r.status_code})"
+        return True, ""
+
+    if not settings.smtp_host:
+        return False, "no mail transport configured"
+
+    try:
+        with smtplib.SMTP(settings.smtp_host, settings.smtp_port, timeout=30) as s:
+            s.starttls()
+            if settings.smtp_user:
+                s.login(settings.smtp_user, settings.smtp_password)
+            s.send_message(msg)
+    except OSError as exc:
+        # Errno 101 / 111 here is almost always the host blocking the port rather
+        # than anything wrong with the message or the credentials. Say so, because
+        # the obvious reading - "my password is wrong" - sends you the wrong way.
+        log.warning("smtp send failed: %s", exc)
+        return False, (f"SMTP unreachable ({exc}). If this host blocks outbound mail "
+                       f"ports, set RESEND_API_KEY to send over HTTPS instead.")
+    except Exception as exc:  # noqa: BLE001 - surfaced to the operator, not swallowed
+        log.exception("smtp send failed")
+        return False, f"SMTP send failed: {exc}"
+    return True, ""
 
 
 def _to_outbox(to: str, cc: str, subject: str, body: str, case_id: str) -> Path:
