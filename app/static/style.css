@@ -521,3 +521,16 @@ td .none { color: var(--ink-4); }
   color: var(--ink-3); font-size: 13px; line-height: 1.5;
   background: var(--paper-2); border-radius: 0 6px 6px 0;
 }
+
+/* The one thing a visitor came to do, told apart from the two things they might
+   read. Everything else in the nav is a link; this is an action. */
+nav a.cta {
+  background: var(--rung-3); color: #fff;
+  padding: 6px 14px; border-radius: 999px;
+  font-weight: 560; border-bottom: 0;
+}
+nav a.cta:hover { background: var(--rung-4); color: #fff; }
+
+.foot p { margin: 0 0 10px; }
+.foot-links a { color: var(--ink-3); }
+.foot-links a:hover { color: var(--ink); }

@@ -28,10 +28,13 @@
     <a class="brand" href="/"><span class="seal"></span>Persist</a>
     <span class="tagline">an agent that doesn't let go of your grievance</span>
     <nav>
+      {# A visitor arrives with a stuck parcel, not an interest in our API spend.
+         The nav carries the two things they might read and the one thing they came
+         to do; the engineering receipts move to the footer, where someone checking
+         our claims will still find them. #}
       <a href="/">Ledger</a>
       <a href="/scoreboard">Scoreboard</a>
-      <a href="/toolbox">Toolbox</a>
-      <a href="/file">File one</a>
+      <a href="/file" class="cta">File a grievance</a>
       {# Operator tools only appear to an operator. A visitor has no use for a
          sourcing kit or a login link, and both read as unfinished scaffolding on
          what is otherwise a public record. #}
@@ -83,11 +86,21 @@
 
   {% block body %}{% endblock %}
 
+  {# This paragraph used to say "every outbound action is approved by a human
+     first". Auto-approval made that false, and a safety claim that has quietly
+     stopped being true is worse than no claim at all. It now describes what the
+     agent actually does. #}
   <footer class="foot">
-    Persist files grievances on <a href="{{ settings.portal_url }}">{{ settings.portal_name }}</a>
-    with each complainant's recorded consent. Every outbound action is approved by a human first.
-    We never ask for, store, or use anyone's portal password — the citizen performs the one
-    credentialed submission themselves.
+    <p>
+      Persist files grievances on <a href="{{ settings.portal_url }}">{{ settings.portal_name }}</a>
+      with each complainant's recorded consent. It prepares and files on its own, and writes to
+      the grievance officer on its own; appeals that name an Appellate Authority or a Director
+      wait for a person to read them first. We never ask for, store, or use anyone's portal
+      password — the citizen performs the one credentialed submission themselves.
+    </p>
+    <p class="foot-links">
+      <a href="/toolbox">How it reads the web, and what that costs</a>
+    </p>
   </footer>
 </main>
 </body>

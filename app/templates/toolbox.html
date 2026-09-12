@@ -12,21 +12,39 @@
     exist — the unsuccessful ones included, at full price.
   </p>
 
+  {# The deployed instance starts with an empty ledger, so this row rendered four
+     zeros and read like a broken page. The credit figures are facts about one
+     database; the catalog gap below is a fact about the world, and it holds
+     whichever instance you are looking at. Show the numbers only when there are
+     numbers. #}
+  {% if spent or builds %}
   <div class="stats">
     <div class="stat"><div class="n">{{ forged|length }}</div><div class="k">Connectors working</div></div>
     <div class="stat bad"><div class="n">{{ builds|selectattr('status','equalto','failed')|list|length }}</div><div class="k">Builds that failed</div></div>
     <div class="stat"><div class="n">{{ spent }}</div><div class="k">Credits spent</div></div>
     <div class="stat"><div class="n">{{ budget - spent }}</div><div class="k">Remaining</div></div>
   </div>
+  {% endif %}
 </section>
 
-{% if builds %}
-<h2>Every attempt, including the ones that failed</h2>
+<h2>The gap</h2>
 <p>
-  India's national grievance portal is not in Anakin's catalog of 991 sites — ask it how to
-  check a grievance and it offers box office charts. Building the missing connector was
-  meant to close that gap. It did not, and the measurement is more useful than the claim
-  would have been:
+  India's national grievance portal is not in Anakin's catalog of 991 sites. Ask that catalog
+  how to check a government grievance and it offers daily box office charts and FAA airport
+  restrictions. India Post <em>is</em> listed — with six actions that sell commemorative stamps
+  and Gangajal, and none that track a parcel.
+</p>
+<p>
+  That costs nothing to verify: catalog listing, action discovery and Zero Touch runs are all
+  keyless. Anyone can re-run it from the repository in one command, which is why it is stated
+  here as a finding rather than a claim.
+</p>
+
+{% if builds %}
+<h2>Every attempt to close it, including the ones that failed</h2>
+<p>
+  Building the missing connector was meant to close that gap. It did not, and the measurement
+  is more useful than the claim would have been:
 </p>
 
 <div class="tablewrap">
