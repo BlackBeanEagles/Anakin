@@ -20,7 +20,7 @@ from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Resp
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from . import db, dispatch, inbox, ladder, mailer, watch, web, whatsapp
+from . import anakin, db, dispatch, inbox, ladder, mailer, watch, web, whatsapp
 from .config import ROOT, settings
 
 logging.basicConfig(
@@ -213,7 +213,10 @@ def _authed(session: str | None) -> bool:
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
     return templates.TemplateResponse(request, "dashboard.html", {
-        "ev": _eval_summary(),
+        # Every page the agent has gone and read, newest first. This is the live
+        # half of the Anakin integration made visible: which route each read
+        # needed, and what it cost.
+        "reads": anakin.ledger(12),
         "stats": db.stats(),
         "cases": db.list_cases(public_only=True),
         "events": db.recent_events(30),

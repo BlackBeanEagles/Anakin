@@ -54,54 +54,34 @@
   </div>
 </div>
 
-{% if ev %}
-{# The hardest number this project has, and it was nowhere on the site. Read from
-   the eval artefact rather than typed into the template: if evals/results-52.json
-   is missing this section does not render, instead of quoting figures nobody can
-   reproduce. #}
-<h2>Does the routing actually work?</h2>
-<div class="card evidence">
-  <p class="ev-lede">
-    Routing is the whole product — send a grievance to the wrong department and it comes
-    back weeks later as “not related to this office”. So it is measured, against
-    {{ ev.cases }} deliberately hard cases: code-mixed Hindi, complaints with the wrong
-    authority named confidently, state matters that only look central, and
-    {{ ev.cases // 4 }} that CPGRAMS cannot action at all.
+{% if reads %}
+{# This used to be a static table of eval percentages. Accurate, but frozen - a
+   number that never moves does not belong on a page whose whole claim is that
+   something is happening right now. The measured accuracy lives in the README and
+   in evals/, where it can be re-run. What goes here instead is the thing that is
+   actually live: every government page the agent has gone and read, and how it
+   had to get it. #}
+<h2>What it read, and how it got in</h2>
+<div class="card reads">
+  <p class="reads-lede">
+    Two of the pages this depends on are hard on purpose — the CPGRAMS status screen is
+    captcha-gated, India Post tracking is a JS-rendered form. Each read climbs a ladder:
+    our own request first, and only when that is refused does it escalate to a proxy, then
+    to a real browser. Free rungs are marked; the rest cost credits and are itemised.
   </p>
-
   <div class="tablewrap">
-  <table class="ev-table">
+  <table>
+    <tr><th>When</th><th>What it went to read</th><th>How</th><th class="num">Cost</th></tr>
+    {% for r in reads %}
     <tr>
-      <th></th>
-      <th class="num">This agent</th>
-      <th class="num">Routed the obvious way</th>
+      <td class="nowrap">{{ r.ts[11:16] }}</td>
+      <td>{{ r.detail }}</td>
+      <td><span class="route route-{{ r.endpoint|replace('/','-') }}">{{ r.endpoint }}</span></td>
+      <td class="num">{% if r.credits %}{{ r.credits }} cr{% else %}<span class="none">free</span>{% endif %}</td>
     </tr>
-    <tr>
-      <td>Refused what CPGRAMS can’t action</td>
-      <td class="num good">{{ ev.scope_accuracy }}%</td>
-      <td class="num">{{ ev.baseline.scope_accuracy }}%</td>
-    </tr>
-    <tr>
-      <td>Right department</td>
-      <td class="num good">{{ ev.ministry_accuracy }}%</td>
-      <td class="num">{{ ev.baseline.ministry_accuracy }}%</td>
-    </tr>
-    <tr>
-      <td>Right department <em>and</em> category</td>
-      <td class="num good">{{ ev.category_accuracy }}%</td>
-      <td class="num">{{ ev.baseline.category_accuracy }}%</td>
-    </tr>
+    {% endfor %}
   </table>
   </div>
-
-  <p class="ev-punch">
-    <strong>{{ ev.misfiled_by_baseline }} of {{ ev.cases }}</strong> would have landed on the
-    wrong desk.
-  </p>
-  <p class="ev-foot">
-    {{ ev.model }} · {{ ev.errors }} errors across the run · the cases and the scoring script
-    are both in the repository, so the number can be re-run rather than taken on trust.
-  </p>
 </div>
 {% endif %}
 

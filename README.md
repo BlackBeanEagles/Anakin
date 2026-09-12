@@ -10,6 +10,88 @@ Director of Public Grievances.
 
 Every case, every action, and every loss is on a public ledger.
 
+**Live:** https://persist-3coo.onrender.com — file one, and watch it get worked.
+
+---
+
+## How it works
+
+A case moves left to right. The agent takes the first three rungs on its own; anything
+that names a senior official stops for a human.
+
+```mermaid
+flowchart LR
+    subgraph intake [" "]
+        direction TB
+        W[Web form] --> N
+        A[WhatsApp] --> N
+        N[Narrative<br/>however it comes out]
+    end
+
+    N --> E[extract<br/>dates · references · the ask]
+    E --> R{route}
+    R -->|out of scope| X[Refuse and say why<br/>municipal · state · courts]
+    R -->|missing a fact| Q[Ask the citizen<br/>twice, then close honestly]
+    R -->|routable| D[draft<br/>one rung, one letter]
+
+    D --> P{dispatch}
+    P -->|rung 0-2| AUTO[Agent sends it]
+    P -->|rung 3+| HUMAN[Console<br/>a person reads it first]
+
+    AUTO --> LAD
+    HUMAN --> LAD
+
+    subgraph LAD [the ladder]
+        direction TB
+        L0[0 · prepare packet] --> L1[1 · file on CPGRAMS]
+        L1 --> L2[2 · grievance officer]
+        L2 --> L3[3 · appellate authority]
+        L3 --> L4[4 · regional office, by phone]
+        L4 --> L5[5 · Director of Public Grievances]
+    end
+
+    LAD --> WAIT[wait out the deadline]
+    WAIT --> OBS[look before climbing<br/>read the live status page]
+    OBS -->|closed, or answered| DONE[Resolve · publish the outcome]
+    OBS -->|still pending| LAD
+
+    IN[Department replies] --> ASSESS{a real remedy,<br/>or a non-answer?}
+    ASSESS -->|remedy| DONE
+    ASSESS -->|deflection| LAD
+```
+
+**Why `look before climbing` is its own step.** Without it the agent is a timer: it
+files, sleeps, and escalates whether or not anything happened. Escalating to a Director
+on a grievance that was quietly resolved last week helps nobody and burns the one thing
+this depends on — being taken seriously.
+
+### Getting the page in the first place
+
+Two of the pages it needs are hard on purpose: the CPGRAMS status screen is session- and
+captcha-gated, and India Post tracking is a JS-rendered ASP.NET form. So reads climb a
+ladder of their own, cheapest rung first, and every rung is allowed to fail.
+
+```mermaid
+flowchart TB
+    Q[need a page] --> T{Wire connector<br/>for this site?}
+    T -->|yes| WIRE[run it · free<br/>returns fields, not prose]
+    T -->|no| C{cached<br/>under 30 min?}
+    C -->|yes| HIT[serve it · free]
+    C -->|no| ROB{robots.txt<br/>allows us?}
+    ROB -->|no| STOP[refuse · not ours to take]
+    ROB -->|yes| GET[direct fetch · free]
+    GET -->|200 and real content| OK[read it]
+    GET -->|refused, or a landing page| PX[Anakin proxy · 1 credit]
+    PX -->|still nothing| BR[headless browser · 1 credit]
+    BR -->|still nothing| TIMER[fall back to the timer<br/>exactly as before]
+
+    WIRE --> OK
+    HIT --> OK
+```
+
+The fallback is the point. A read that fails costs the agent evidence quality, never the
+case.
+
 ---
 
 ## The thesis
@@ -41,6 +123,38 @@ anyone's portal password.** The work splits cleanly:
 
 ---
 
+## How much the agent decides alone
+
+"Autonomous" is easy to claim and easy to make meaningless in either direction — an
+agent that asks permission at every rung is a form with extra steps, and one that asks
+at none is a liability pointed at named civil servants.
+
+The split is by **consequence**, not convenience:
+
+| Rung | Who sends it | Why |
+|---|---|---|
+| 0–2 · prepare, file, write to the grievance officer | **the agent** | the ordinary machinery of a grievance; a citizen who asked for help has consented to it |
+| 3+ · appellate authority, Director | **a human** | correspondence naming a senior official, which carries weight and should be read first |
+| phone | **a human** | somebody has to actually make the call |
+
+Three gates sit in front of the agent's half, in `dispatch.may_auto_approve`:
+
+- a routing the model was unsure about waits for a person
+- a department name where an address should be is refused, not sent
+- a rejected draft is never auto-sent on the retry — a human just said no, and the
+  agent overruling them would be worse than the delay
+
+And one gate has **no off switch**: `dispatch.reaches_a_real_recipient()` refuses
+auto-approval whenever a message would genuinely land at a department. Autonomy is
+demonstrated against `DRY_RUN` or `MAIL_REDIRECT_TO`; reaching a real official stays a
+human decision. Setting the rung ceiling to 99 does not get past it, and there is a test
+that says so.
+
+The case timeline records **who** approved each action — "approved by the agent" or "by
+a human reviewer". A public ledger that cannot say which is not a record.
+
+---
+
 ## The escalation ladder
 
 This is what makes it an agent rather than a form-filler. Each rung has its own
@@ -63,88 +177,98 @@ run in minutes while testing.
 
 ---
 
-## Reading the web, and the tool that could not be built
+## Where Anakin is used, exactly
 
-Two of the pages this depends on are hard to read on purpose. The CPGRAMS status
-screen is session- and captcha-gated; India Post tracking is a JS-rendered ASP.NET
-form. A plain HTTP GET gets a landing page from both, which leaves the ladder running
-on a timer with no evidence to cite.
+Persist needs to read two pages that are hard to read on purpose, and both matter to
+the argument it makes to a department:
 
-So reads climb a ladder of their own, cheapest rung first:
-
-| Rung | Cost | What it is |
+| Page | Why it resists | Why the agent needs it |
 |---|---|---|
-| Wire connector | 0 | a pre-built action for the site — returns fields, not a page |
-| cache | 0 | already read recently |
-| direct fetch | 0 | our own request, with robots.txt honoured |
-| Anakin proxy | 1 credit | the same request through residential routing |
-| headless browser | 1 credit | for pages that need JavaScript to exist at all |
+| CPGRAMS status (`pgportal.gov.in`) | session- and captcha-gated | *don't* escalate something already resolved |
+| India Post tracking | JS-rendered ASP.NET form | "tracking still reads 'in transit' 41 days after booking" is a fact they must answer |
 
-### The gap is real, and free to prove
+A plain HTTP GET gets a landing page from both. Without a real read the ladder degrades
+to a timer — it escalates on schedule whether or not anything happened, which is both
+weaker and ruder than it needs to be.
 
-[Anakin](https://anakin.io)'s Wire catalog holds roughly 5,000 pre-built actions
-across 991 sites. **Neither site Persist needs is in it.** Ask the catalog how to
-check a government grievance and it offers box office charts and FAA airport
-restrictions. India Post is listed, but its six actions sell commemorative stamps and
-Gangajal — none of them track a parcel.
+### 1. `url-scraper` — the two paid rungs of the read ladder
 
-```bash
-python scripts/forge.py          # the gap report. Costs nothing, keyless, reproducible.
+`app/web.py` escalates only when its own request has already failed:
+
+```
+cache (free) → our own GET, robots.txt obeyed (free)
+             → Anakin proxy, 1 credit          ← refused us over who was asking
+             → Anakin headless browser, 1 credit ← page needs JS to exist at all
+             → give up, fall back to the timer
 ```
 
-Discovery is free throughout — `/wire/resolve`, the catalog listing and per-site
-action lists are all public — so proving the gap costs nothing at all. `catalog.py`
-reranks on top of `/resolve`, which matches on text rather than meaning: ask it about
-a government portal and it returns a sports shop, because both descriptions contain
-the word "portal".
+Browser mode costs no extra credits — their pricing is per URL, not per engine — so the
+only cost of the retry is latency. AI extraction (`generateJson`) is deliberately *not*
+used: the model in `watch.py` is already being paid for and does the reading, so paying
+Anakin +2 credits to do it again would be buying the same answer twice.
 
-### Filling the gap did not work
+`app/anakin.py:scrape()` · every call metered into the `credits` table *before* it goes
+out, and refused rather than truncated when the budget cannot cover it.
 
-Anakin can generate a connector for a site that has none: describe it in English,
-their builder writes a scraper, tests it against the live site, and publishes it.
-That was meant to be the centrepiece of this project. **It was tried, on a real
-build, and it failed** — so here is the measurement instead of the claim.
+### 2. `wire/resolve` + `wire/catalog` — discovery, and why it is not trusted
 
-Build `c862cdc1-cba6-4737-895f-ed44fdb0212f`, `pgportal.gov.in`, 2026-09-08:
+Wire is ~5,000 pre-built actions across 991 sites, each a real function with a published
+parameter schema and a credit price. Free and keyless to search.
 
-| | Documented | Actual |
-|---|---|---|
-| Cost | 25 credits | **200 credits** — two thirds of the free tier |
-| On success | action published | catalog entry created, **`action_count: 0`** |
-| On failure | refunded | not refunded — upstream calls this success |
+But `/resolve` matches on **text**, not meaning. Ask it for the Indian government
+grievance portal and it returns an Indian sports shop, because both descriptions contain
+the word "portal". So `app/catalog.py` does not bind its first hit — it runs three
+passes:
 
-The catalog now contains "CPGRAMS PG Portal", category `government`, status `active`,
-with an empty action list. There is nothing to call. `/wire/resolve` still answers
-CPGRAMS queries with box office charts.
+1. `/wire/resolve` — their search, kept because it knows about actions the listing does not spell out
+2. a **local lexical score** over the cached 991-site catalog, weighted so a domain hit beats a description hit
+3. **expansion** — pull the full action list for the best few sites, which is complete where resolve's top-10 is a sample
 
-**What that cost, and what it bought.** 200 credits, and a negative result worth
-having: *the build endpoint reports success without delivering a tool, and charges
-eight times its published price to do it.* Anyone planning to build on that endpoint
-should know before they spend, which is why it is written down here rather than
-quietly dropped.
+Cheap search narrows; the model only ever ranks the shortlist. Doing it the other way
+round spends a model call sorting a thousand irrelevant rows.
 
-### Which is what the fallback is for
+### 3. `wire-run` (Zero Touch) — the free execution path
 
-None of this stopped the project, because it was designed on the assumption that it
-might. A build that does not deliver is recorded, explained, and **measured**: the
-site is re-read uncached through the ordinary chain and the answer written next to
-the failure, so *"does this still work without the connector?"* is a fact rather than
-a hope. `NO_ACTION_PRODUCED` is now a first-class outcome alongside
-`BLOCKED_WEBSITE` and `BUILD_FAILED`, and success is not taken at its word — a build
-that publishes no action is treated as a failure whatever its status field says.
+`app/wire.py` runs a connector for a site before falling back to scraping it. A Wire
+action returns **fields** — status, ministry, a dated history — so nothing has to be
+interpreted and nothing can be misinterpreted, and read-only actions run with no key and
+no credits. A connector that exists is usually *cheaper* than the scrape it replaces.
 
-`app/wire.py` is the path a connector would have been used through. It is finished
-and tested against a mocked action, because the parameter binder had to be written
-blind: Wire generates actions from English, so whether an identifier arrives as
-`registration_number`, `reg_no` or `grievance_id` is unknowable in advance. It sits
-unused, correctly, because `find_tool` finds nothing — which is the honest state of
-the toolbox.
+The keyed `wire/task` flow is only reached for actions needing a connected account.
 
-Credits are metered before each call against two ceilings — the global budget and one
-case's share of it — and calls are refused, never silently degraded. The published
-price is treated as an estimate and the ledger uses what the response actually says,
-because on the one build that mattered those differed by 8x. The whole ledger,
-including the failure, is public at `/toolbox`.
+### 4. `wire/build-request` — the experiment, and what it cost
+
+**CPGRAMS is not in the catalog.** Ask those 991 sites how to check a government
+grievance and the best on offer is daily box office charts and FAA airport restrictions.
+India Post *is* listed — with six actions that sell commemorative stamps and Gangajal,
+and none that track a parcel.
+
+Free to verify, and re-runnable by anyone:
+
+```bash
+python scripts/forge.py        # the gap report. Spends nothing.
+```
+
+Wire can generate a missing action from an English description, test it against the live
+site, and publish it. That was the plan to close the gap.
+
+**It did not work.** Build `c862cdc1…` reported `status: success`, charged **200 credits**
+where the docs say 25, created a catalog entry, and published **zero callable actions**.
+No refund. Details are on `/toolbox` with the receipts.
+
+So `app/wire.py:find_tool()` correctly finds nothing, and every read falls to the scrape
+ladder above. That is the designed behaviour, not a broken path — `fallback.probe()` goes
+and measures whether the site is still reachable and records the answer next to the
+failure, so "does this still work without the connector?" is a fact rather than a hope.
+
+### What that leaves
+
+The gap report is the strongest thing to come out of this, and it costs nothing to
+reproduce: **a catalog of 991 sites has no way to read the grievance portal of 1.4
+billion people.** The attempt to fix it is published at full price, failure included,
+because a measured negative result is worth more than a claim that cannot be checked.
+
+---
 
 ## Quick start
 
@@ -244,6 +368,7 @@ app/
   taxonomy.json  CPGRAMS tree; officer contacts verified, categories not
   web.py         polite fetch layer — cache, robots.txt, then Anakin
   watch.py       reads live status pages before escalating
+  dispatch.py    the one send path, and which rungs the agent may take alone
   wire.py        reads a site through its Wire connector instead of scraping it
   anakin.py      the web-data API client, and the credit budget that governs it
   catalog.py     local index over 991 sites — the fix for a fuzzy /resolve
@@ -263,6 +388,7 @@ scripts/
   test_ladder.py walks a case through all 6 rungs + reject + blocked paths
   test_bugs.py   regressions for bugs that actually shipped
   test_coerce.py schema-coercion tests
+  _testenv.py    seals the mail rail so a test run can never transmit
   test_wire.py   the path from a forged connector to a fact about a case
   test_forge_fallback.py   every way a build can fail, exercised offline
   forge.py       the gap report, and building a connector for what is missing
@@ -354,22 +480,33 @@ browser console on any page with a ladder:
 
 ## Deploying
 
-**See [DEPLOY.md](DEPLOY.md) for the walkthrough.** Short version: build from the
-`Dockerfile`, mount a volume at `/data`, and set `TIME_SCALE=1.0`.
+**Live at https://persist-3coo.onrender.com** — Render free tier, built from the
+`Dockerfile`, auto-deploys on push to `main`.
 
-Two constraints drive the host choice:
+Two constraints drive the host choice, and the deployed instance satisfies one of them:
 
-- **It must not sleep.** The whole differentiator is running autonomously for a week. A
-  host that suspends the process on inactivity stops the escalation tick and the ledger
-  silently stops moving. This rules out Render's free tier and Koyeb free; Fly.io no
-  longer has a free tier at all in 2026.
+- **It should not sleep.** The differentiator is running autonomously without anyone
+  watching, and a host that suspends the process on inactivity stops the escalation
+  tick. Render's free tier *does* sleep after ~15 minutes idle. The deployed instance is
+  therefore a link a judge can open and file through, not the thing accumulating
+  evidence — that runs locally.
 - **It needs a persistent volume.** SQLite on an ephemeral filesystem loses every case
-  on redeploy, which destroys the accumulated evidence the strategy rests on.
+  on redeploy. Render's free tier has no disk, so **the live ledger resets on every
+  deploy**. Mount a disk at `/data` (about $0.15/GB/month) if it needs to survive.
 
-**Northflank Sandbox** is the free tier that satisfies both. `python scripts/doctor.py`
-has a production-readiness section that fails loudly on the four settings that ruin a
-deploy — dev `TIME_SCALE`, a weak console password, an unmounted data dir, and mock mode
-on a public URL.
+**Northflank Sandbox** satisfies both — always-on, no sleeping — and is the better home
+if this outlives the hackathon. [DEPLOY.md](DEPLOY.md) has that walkthrough.
+
+Whatever the host, two settings separate a demo from production:
+
+| Setting | Demo | Deployed | Why |
+|---|---|---|---|
+| `TIME_SCALE` | `0.0001` | `1.0` | 0.0001 turns 21 days into three minutes. Ship it and the agent emails a Director within the hour. |
+| `TICK_SECONDS` | `15` | `300` | A 15-second sweep is for watching the ladder move, not for a live queue. |
+
+`python scripts/doctor.py` fails loudly on the four settings that ruin a deploy — dev
+`TIME_SCALE`, a weak console password, an unmounted data dir, and mock mode on a public
+URL.
 
 ---
 
