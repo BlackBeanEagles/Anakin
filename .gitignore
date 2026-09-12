@@ -10,3 +10,4 @@ outbox/
 webcache/
 .env.production
 northflank-env.txt
+catalog_cache.json
