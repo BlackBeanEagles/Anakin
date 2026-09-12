@@ -451,6 +451,59 @@ def main() -> int:
         settings.auto_approve_through_rung = real["rung"]
         settings.auto_approve_min_confidence = real["conf"]
 
+    # ---------------------------------------------------------------------
+    # Two bugs a real test filing found, both of which closed a genuine case.
+    #
+    # The narrative said "12 August", tracking stopped "14 August", filed in
+    # September. The extractor left the date empty and asked "Year of the
+    # consignment dispatch" - blocking the filing on a question nobody would
+    # bother to answer. Then TIME_SCALE compressed the ask/remind/close cycle
+    # into 51 seconds, so the citizen got three emails and a closed case before
+    # they could read the first one.
+    from datetime import date as _date
+    from app.agent.extract import _infer_year
+
+    t = _date(2026, 9, 12)
+    f = _infer_year({"incident_date": "12 August",
+                     "missing_info": ["Year of the consignment dispatch"]}, today=t)
+    check("a bare day-and-month gets the obvious year",
+          f["incident_date"] == "2026-08-12", f["incident_date"])
+    check("nobody is asked what year they meant", f["missing_info"] == [],
+          str(f["missing_info"]))
+    check("the inferred year is recorded, not hidden",
+          any("Year not stated" in a for a in f.get("assumptions", [])))
+
+    # A month later in the year than today has to mean last year, not the future.
+    f = _infer_year({"incident_date": "12 December", "missing_info": []}, today=t)
+    check("a future-looking date resolves to last year",
+          f["incident_date"] == "2025-12-12", f["incident_date"])
+
+    # A real date and unrelated questions must survive untouched.
+    f = _infer_year({"incident_date": "2026-08-12",
+                     "missing_info": ["Exact address of the post office"]}, today=t)
+    check("a complete date is left alone",
+          f["incident_date"] == "2026-08-12" and len(f["missing_info"]) == 1)
+
+    f = _infer_year({"incident_date": "32 Bogember", "missing_info": []}, today=t)
+    check("unparseable dates are not mangled", f["incident_date"] == "32 Bogember")
+
+    # The wait floor. A department is not watching its inbox; a citizen who was
+    # just asked a question is.
+    real_scale = settings.time_scale
+    try:
+        settings.time_scale = 0.0001
+        dept = ladder.wait_until(21)
+        cit = ladder.wait_until(ladder.NUDGE_AFTER_DAYS, waiting_on_citizen=True)
+        now = db.now()
+        dept_gap = (datetime.fromisoformat(dept) - datetime.fromisoformat(now)).total_seconds()
+        cit_gap = (datetime.fromisoformat(cit) - datetime.fromisoformat(now)).total_seconds()
+        check("a department wait still compresses for the demo", dept_gap < 600,
+              f"{dept_gap:.0f}s")
+        check("a citizen is never chased faster than real time allows",
+              cit_gap >= ladder.MIN_CITIZEN_WAIT_SECONDS, f"{cit_gap:.0f}s")
+    finally:
+        settings.time_scale = real_scale
+
     failed = [r for r in results if not r[1]]
     print(f"\n{len(results) - len(failed)}/{len(results)} passed\n")
     return 1 if failed else 0

@@ -68,9 +68,27 @@ def rung(n: int) -> Rung:
     return RUNGS[min(max(n, 0), len(RUNGS) - 1)]
 
 
-def wait_until(days: float) -> str:
-    """Apply TIME_SCALE so the full ladder can be demonstrated in minutes."""
+# A department is not sitting at its screen waiting, so compressing the 21 days
+# before an escalation costs nothing but time. A citizen who has just been asked a
+# question IS at their screen, and compressing that wait means asking them
+# something and closing their case before they can reply. This floor is what
+# separates the two.
+MIN_CITIZEN_WAIT_SECONDS = 20 * 3600     # ~a day, even at demo speed
+
+
+def wait_until(days: float, *, waiting_on_citizen: bool = False) -> str:
+    """Apply TIME_SCALE so the full ladder can be demonstrated in minutes.
+
+    Except when the person we are waiting on is the citizen. A real complaint filed
+    in testing was asked for one missing detail, reminded 19 seconds later, and
+    closed as abandoned 31 seconds after that - the whole ask/remind/close cycle,
+    meant to run over a week, collapsed into 51 seconds because TIME_SCALE applied
+    to it. The citizen got three emails and a closed case before they could read
+    the first one.
+    """
     seconds = days * 86400 * settings.time_scale
+    if waiting_on_citizen:
+        seconds = max(seconds, MIN_CITIZEN_WAIT_SECONDS)
     return (datetime.now(timezone.utc) + timedelta(seconds=max(seconds, 5))).isoformat()
 
 
@@ -265,7 +283,8 @@ def ask_citizen(case_id: str, questions: list[str]) -> None:
 
     db.update_case(case_id, status="needs_info", info_asks=asked + 1,
                    info_questions=json.dumps(questions),
-                   next_action_at=wait_until(NUDGE_AFTER_DAYS))
+                   next_action_at=wait_until(NUDGE_AFTER_DAYS,
+                                             waiting_on_citizen=True))
     db.log_event(case_id, "blocked",
                  ("Cannot file yet - asked the citizen for: " if asked == 0
                   else "Still blocked - reminded the citizen about: ")
