@@ -12,28 +12,32 @@
     takes weeks. This page is the full record, wins and losses.
   </p>
 
+  {# A row of six zeros is what an empty ledger looks like, and it reads as
+     "nothing here works". Until there is something to count, show what the agent
+     will do instead - that is the question a first-time visitor actually has. #}
+  {% if stats.total %}
   <div class="stats">
     <div class="stat"><div class="n">{{ stats.total }}</div><div class="k">Cases taken</div></div>
     <div class="stat"><div class="n">{{ stats.filed }}</div><div class="k">Filed</div></div>
     <div class="stat good"><div class="n">{{ stats.resolved }}</div><div class="k">Resolved</div></div>
-    {# A win rate needs resolved cases to be a rate at all. Printing "0.0%" beside
-       three open cases states a failure that has not happened yet - the scoreboard
-       already suppresses per-department rates under three replies for the same
-       reason, and the dashboard should not contradict it. #}
-    {# The em dash carries "no data" on its own. An appended clause made the label
-       wrap to two lines and crowded every other cell in the row - the dash says the
-       same thing in one glyph, and the tooltip carries the rest for anyone who
-       wonders. #}
     <div class="stat" {% if not stats.resolved %}title="No case has closed yet, so there is no rate to report."{% endif %}>
       <div class="n">{% if stats.resolved %}{{ stats.win_rate }}%{% else %}&mdash;{% endif %}</div>
       <div class="k">Win rate</div></div>
     <div class="stat"><div class="n">{{ stats.actions_sent }}</div><div class="k">Actions taken</div></div>
     <div class="stat good"><div class="n">₹{{ "{:,.0f}".format(stats.recovered) }}</div><div class="k">Recovered</div></div>
   </div>
+  {% else %}
+  <p class="lede-cta">
+    <a href="/file" class="btn-primary">File a grievance</a>
+    <span>Takes two minutes. Write it however it comes out — the agent does the rest.</span>
+  </p>
+  {% endif %}
 </section>
 
-{% if cases %}
-<h2>Escalation ladder</h2>
+{# Hidden behind `if cases` it disappeared exactly when it was most needed: an
+   empty ledger with no explanation of what happens next. It is the clearest thing
+   on the page, so it always shows. #}
+<h2>What happens after you file</h2>
 <div class="card">
   <div class="ladder" style="margin-top:2px">
     {% for r in RUNGS[:6] %}
@@ -45,14 +49,12 @@
   <div class="ladder-note">
     Colour depth tracks how far a case has climbed. A grievance that gets a real answer stops
     early; one that gets brushed off keeps going, and the ledger shows exactly how far.
+    The agent files and writes to the grievance officer by itself; an appeal that names an
+    Appellate Authority waits for a person to read it first.
   </div>
 </div>
-{% endif %}
 
-<h2>Cases</h2>
-{% if not cases %}
-  <div class="empty">No cases yet. <a href="/file">File the first one →</a></div>
-{% endif %}
+{% if cases %}<h2>Cases</h2>{% endif %}
 {% for c in cases %}
   {% set facts = c.facts_json | fromjson %}
   <a class="case-row r{{ c.rung }}" href="/case/{{ c.id }}" style="color:inherit">
@@ -80,10 +82,8 @@
   </a>
 {% endfor %}
 
+{% if events %}
 <h2>Live activity</h2>
-{% if not events %}
-  <div class="empty">The agent hasn't done anything yet.</div>
-{% else %}
 <div class="card">
   <div class="timeline">
     {% for e in events %}

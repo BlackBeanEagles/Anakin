@@ -534,3 +534,14 @@ nav a.cta:hover { background: var(--rung-4); color: #fff; }
 .foot p { margin: 0 0 10px; }
 .foot-links a { color: var(--ink-3); }
 .foot-links a:hover { color: var(--ink); }
+
+/* The empty ledger's call to action. A visitor who arrives before there is any
+   history needs one obvious next step, not six zeros. */
+.lede-cta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 0; }
+.lede-cta span { color: var(--ink-3); font-size: 14px; max-width: 38ch; }
+.btn-primary {
+  display: inline-block; background: var(--rung-4); color: #fff;
+  padding: 11px 22px; border-radius: 8px; font-weight: 580; font-size: 15px;
+  text-decoration: none; box-shadow: var(--shadow); white-space: nowrap;
+}
+.btn-primary:hover { background: var(--rung-5); color: #fff; }
