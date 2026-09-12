@@ -1,0 +1,44 @@
+# Persist on Fly.io
+#
+# One machine, one worker, one volume. The escalation tick runs in-process via
+# APScheduler and the intake rate limiter is in memory, so a second machine would
+# double-advance every case. auto_stop_machines is off for the same reason: a
+# stopped machine is a scheduler that is not ticking, and this agent's whole claim
+# is that it keeps working while nobody is watching.
+
+app = "persist-grievance"
+primary_region = "bom"          # Mumbai - the departments and citizens are in India
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  PORT = "8000"
+  PERSIST_DATA_DIR = "/data"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = false
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 40
+    hard_limit = 80
+
+# Without this the database and the outbox live on the machine's ephemeral disk and
+# every case vanishes on the next deploy - which would destroy the accumulated
+# evidence that is the entire point of the ledger.
+[[mounts]]
+  source = "persist_data"
+  destination = "/data"
+
+[checks.health]
+  type = "http"
+  port = 8000
+  path = "/health"
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "30s"
