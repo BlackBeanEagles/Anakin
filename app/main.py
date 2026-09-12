@@ -106,6 +106,21 @@ templates.env.globals["base_url"] = settings.public_base_url.rstrip("/")
 templates.env.globals["settings"] = settings
 templates.env.globals["RUNGS"] = ladder.RUNGS
 
+# Cache-buster for the stylesheet. Without it a returning visitor keeps the CSS
+# their browser cached on a previous deploy, so every design change ships
+# invisibly to exactly the people who have seen the site before - which is how a
+# fix can be live, verified by curl, and still absent in the browser.
+# Derived from the file's mtime, so it changes when the file does and not
+# otherwise.
+def _asset_version() -> str:
+    try:
+        return str(int((ROOT / "app" / "static" / "style.css").stat().st_mtime))
+    except OSError:
+        return "0"
+
+
+templates.env.globals["asset_v"] = _asset_version()
+
 
 @app.middleware("http")
 async def _operator_flag(request: Request, call_next):
