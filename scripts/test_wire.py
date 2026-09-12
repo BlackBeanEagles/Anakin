@@ -17,6 +17,11 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+
+import _testenv  # noqa: E402  - seals the mail rail; must precede app imports
+
+_testenv.assert_sealed()  # refuses to run if anything could transmit
 
 from app import db, watch, wire  # noqa: E402
 
