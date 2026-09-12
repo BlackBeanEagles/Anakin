@@ -54,6 +54,57 @@
   </div>
 </div>
 
+{% if ev %}
+{# The hardest number this project has, and it was nowhere on the site. Read from
+   the eval artefact rather than typed into the template: if evals/results-52.json
+   is missing this section does not render, instead of quoting figures nobody can
+   reproduce. #}
+<h2>Does the routing actually work?</h2>
+<div class="card evidence">
+  <p class="ev-lede">
+    Routing is the whole product — send a grievance to the wrong department and it comes
+    back weeks later as “not related to this office”. So it is measured, against
+    {{ ev.cases }} deliberately hard cases: code-mixed Hindi, complaints with the wrong
+    authority named confidently, state matters that only look central, and
+    {{ ev.cases // 4 }} that CPGRAMS cannot action at all.
+  </p>
+
+  <div class="tablewrap">
+  <table class="ev-table">
+    <tr>
+      <th></th>
+      <th class="num">This agent</th>
+      <th class="num">Routed the obvious way</th>
+    </tr>
+    <tr>
+      <td>Refused what CPGRAMS can’t action</td>
+      <td class="num good">{{ ev.scope_accuracy }}%</td>
+      <td class="num">{{ ev.baseline.scope_accuracy }}%</td>
+    </tr>
+    <tr>
+      <td>Right department</td>
+      <td class="num good">{{ ev.ministry_accuracy }}%</td>
+      <td class="num">{{ ev.baseline.ministry_accuracy }}%</td>
+    </tr>
+    <tr>
+      <td>Right department <em>and</em> category</td>
+      <td class="num good">{{ ev.category_accuracy }}%</td>
+      <td class="num">{{ ev.baseline.category_accuracy }}%</td>
+    </tr>
+  </table>
+  </div>
+
+  <p class="ev-punch">
+    <strong>{{ ev.misfiled_by_baseline }} of {{ ev.cases }}</strong> would have landed on the
+    wrong desk.
+  </p>
+  <p class="ev-foot">
+    {{ ev.model }} · {{ ev.errors }} errors across the run · the cases and the scoring script
+    are both in the repository, so the number can be re-run rather than taken on trust.
+  </p>
+</div>
+{% endif %}
+
 {% if cases %}<h2>Cases</h2>{% endif %}
 {% for c in cases %}
   {% set facts = c.facts_json | fromjson %}

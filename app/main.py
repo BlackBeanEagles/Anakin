@@ -7,10 +7,12 @@ Three faces:
 """
 import hashlib
 import hmac
+import json
 import logging
 import secrets
 import time
 from contextlib import asynccontextmanager
+from functools import lru_cache
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from fastapi import Cookie, FastAPI, Form, Request
@@ -122,6 +124,35 @@ def _asset_version() -> str:
 templates.env.globals["asset_v"] = _asset_version()
 
 
+@lru_cache(maxsize=1)
+def _eval_summary() -> dict | None:
+    """The measured routing accuracy, read from the eval run that produced it.
+
+    Hardcoding these numbers into a template would make them a claim. Reading them
+    from the artefact the eval wrote keeps them a measurement - if the file is not
+    there, the section simply does not render rather than quoting figures nobody
+    can check.
+    """
+    path = ROOT / "evals" / "results-52.json"
+    try:
+        summary = json.loads(path.read_text(encoding="utf-8"))["summary"]
+    except (OSError, KeyError, json.JSONDecodeError):
+        return None
+    base = summary.get("baseline") or {}
+    if not base:
+        return None
+    # The counterfactual is the number that lands: how many of these would have gone
+    # to the wrong desk if routed the obvious way. Counted the same way run_eval.py
+    # counts it - one per case whose baseline category was wrong - by reading the
+    # per-case results rather than deriving it from a percentage. A derived figure
+    # said 21 where the eval itself printed 31, and a site that disagrees with its
+    # own evidence file is worse than a site with no number on it.
+    results = json.loads(path.read_text(encoding="utf-8")).get("results") or []
+    summary["misfiled_by_baseline"] = sum(
+        1 for r in results if not (r.get("baseline") or {}).get("category_ok"))
+    return summary
+
+
 @app.middleware("http")
 async def _operator_flag(request: Request, call_next):
     """Let every template know whether an operator is looking.
@@ -182,6 +213,7 @@ def _authed(session: str | None) -> bool:
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request):
     return templates.TemplateResponse(request, "dashboard.html", {
+        "ev": _eval_summary(),
         "stats": db.stats(),
         "cases": db.list_cases(public_only=True),
         "events": db.recent_events(30),
