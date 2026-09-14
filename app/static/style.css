@@ -123,13 +123,17 @@ a:hover { text-decoration: underline; text-underline-offset: 2px; }
 
 /* ---------------------------------------------------------------- header */
 header.top {
-  border-bottom: 1px solid var(--edge);
+  border-bottom: 1px solid rgba(231,226,214,.55);
   /* Thin enough for the cuttings to read through, with a heavier blur doing the
      legibility work instead of opacity. A solid bar here cut a white band across
      the collage and made the page look like two unrelated designs stacked. */
-  background: rgba(251,249,244,.58);
-  backdrop-filter: blur(16px) saturate(1.1);
-  -webkit-backdrop-filter: blur(16px) saturate(1.1);
+  /* Tinted toward the collage rather than toward white. A paper-white wash sat a
+     shade lighter than the cuttings behind it, which put a visible step across the
+     page exactly where there should be none - the header should look like the same
+     surface, slightly hazed, not a separate bar laid on top. */
+  background: rgba(228,220,201,.42);
+  backdrop-filter: blur(18px) saturate(1.05);
+  -webkit-backdrop-filter: blur(18px) saturate(1.05);
   position: sticky; top: 0; z-index: 20;
   margin-bottom: 34px;
 }
