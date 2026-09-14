@@ -78,9 +78,13 @@
   {% elif settings.dry_run or settings.mail_redirect_to %}
   {# The public version states the fact and nothing else. Removing it entirely would
      let the ledger imply letters were sent when they were not. #}
+  {# "Demonstration mode" sounded like a disabled product. What is actually true is
+     more interesting: the letters are real and they really get sent - they are just
+     pointed away from departments while this is being shown. Say that. #}
   <p class="notice">
-    Demonstration mode — correspondence shown here is prepared and recorded, but not
-    transmitted to departments.
+    <strong>Everything here is real except the recipient.</strong> Letters are drafted
+    and dispatched exactly as they would be — and held back from actual departments
+    while this is on show. Nothing has landed on a civil servant's desk.
   </p>
   {% endif %}
 

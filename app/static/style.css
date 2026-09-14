@@ -516,20 +516,25 @@ td .none { color: var(--ink-4); }
    env-var name in it. Quiet on purpose: this is a footnote to the page, not a
    warning about it. */
 .notice {
-  margin: 0 0 26px; padding: 10px 14px;
-  border-left: 2px solid var(--edge);
-  color: var(--ink-3); font-size: 13px; line-height: 1.5;
-  background: var(--paper-2); border-radius: 0 6px 6px 0;
+  margin: 0 0 26px; padding: 11px 16px;
+  border-left: 2px solid var(--rung-1);
+  color: var(--ink-3); font-size: 13.5px; line-height: 1.55;
+  background: linear-gradient(90deg, var(--wash-indigo), transparent 70%);
+  border-radius: 0 6px 6px 0;
 }
+.notice strong { color: var(--ink-2); font-weight: 600; }
 
 /* The one thing a visitor came to do, told apart from the two things they might
    read. Everything else in the nav is a link; this is an action. */
+/* Solid indigo made this the darkest object on a page of warm paper - it read as
+   a warning rather than an invitation. A tinted wash with ink-coloured text keeps
+   it unmistakably a button while letting the page stay light. */
 nav a.cta {
-  background: var(--rung-3); color: #fff;
-  padding: 6px 14px; border-radius: 999px;
-  font-weight: 560; border-bottom: 0;
+  background: var(--wash-indigo); color: var(--rung-ink);
+  border: 1px solid #dbe0f5; border-bottom: 1px solid #dbe0f5;
+  padding: 6px 15px; border-radius: 999px; font-weight: 560;
 }
-nav a.cta:hover { background: var(--rung-4); color: #fff; }
+nav a.cta:hover { background: #e8ecfa; border-color: #c9d1ef; color: var(--rung-ink); }
 
 .foot p { margin: 0 0 10px; }
 .foot-links a { color: var(--ink-3); }
@@ -540,11 +545,12 @@ nav a.cta:hover { background: var(--rung-4); color: #fff; }
 .lede-cta { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin: 0; }
 .lede-cta span { color: var(--ink-3); font-size: 14px; max-width: 38ch; }
 .btn-primary {
-  display: inline-block; background: var(--rung-4); color: #fff;
-  padding: 11px 22px; border-radius: 8px; font-weight: 580; font-size: 15px;
+  display: inline-block; background: var(--wash-indigo); color: var(--rung-ink);
+  border: 1px solid #d3daf2;
+  padding: 11px 22px; border-radius: 10px; font-weight: 580; font-size: 15px;
   text-decoration: none; box-shadow: var(--shadow); white-space: nowrap;
 }
-.btn-primary:hover { background: var(--rung-5); color: #fff; }
+.btn-primary:hover { background: #e8ecfa; border-color: #bcc6e9; color: var(--rung-ink); }
 
 /* ---------------------------------------------------------------- evidence
 
