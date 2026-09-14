@@ -497,9 +497,14 @@ def main() -> int:
     real_scale = settings.time_scale
     try:
         settings.time_scale = 0.0001
+        # The baseline has to be taken BEFORE the calls. Taking it after meant the
+        # measured gap was always short by however long the two calls took, so the
+        # citizen-floor assertion failed intermittently whenever the machine was
+        # busy - a flaky test that looks like a real regression at exactly the
+        # wrong moment.
+        now = db.now()
         dept = ladder.wait_until(21)
         cit = ladder.wait_until(ladder.NUDGE_AFTER_DAYS, waiting_on_citizen=True)
-        now = db.now()
         dept_gap = (datetime.fromisoformat(dept) - datetime.fromisoformat(now)).total_seconds()
         cit_gap = (datetime.fromisoformat(cit) - datetime.fromisoformat(now)).total_seconds()
         check("a department wait still compresses for the demo", dept_gap < 600,
